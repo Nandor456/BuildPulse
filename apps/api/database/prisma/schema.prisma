@@ -1,0 +1,152 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String  @id @default(uuid())
+  username   String  @unique
+  email      String  @unique
+  password   String
+  role       String
+  hourlyWage Float?  @map("hourly_wage")
+
+  workPoints         WorkPoint[]
+  invitations        Invitation[]     @relation("InvitedBy")
+  assignedWorkPoints WorkPoint[]      @relation("WorkPointWorkers")
+  attendances        Attendance[]
+  chatParticipants   ChatParticipant[]
+  sentMessages       Message[]
+}
+
+model WorkPoint {
+  id          String   @id @default(uuid())
+  name        String
+  address     String
+  lat         Float?
+  lng         Float?
+  description String?
+  userId      String?       @map("user_id")
+  uploadedAt  DateTime      @default(now())
+  deadline    DateTime?
+  qrToken     String        @unique @default(uuid()) @map("qr_token")
+  user        User?         @relation(fields: [userId], references: [id])
+  workers               User[]     @relation("WorkPointWorkers")
+  attendances           Attendance[]
+  chat                  Chat?
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  email       String
+  role        String
+  token       String    @unique
+  invitedById String?   @map("invited_by_id")
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  invitedBy   User?     @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  @@index([email])
+  @@map("invitations")
+}
+
+model Attendance {
+  id            String    @id @default(uuid())
+  workerId      String    @map("worker_id")
+  workPointId   String    @map("work_point_id")
+  date          DateTime  @db.Date @map("date")
+  checkedInAt   DateTime  @default(now()) @map("checked_in_at")
+  checkedOutAt  DateTime? @map("checked_out_at")
+  source        String
+
+  worker      User      @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  workPoint   WorkPoint @relation(fields: [workPointId], references: [id], onDelete: Cascade)
+
+  @@unique([workerId, workPointId, date])
+  @@index([workPointId, date])
+  @@map("attendances")
+}
+
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire])
+  @@map("session")
+}
+
+// ─── Messaging ───────────────────────────────────────────────────────────────
+
+enum ChatType {
+  DIRECT
+  GROUP
+  WORKPOINT
+}
+
+model Chat {
+  id            String            @id @default(uuid())
+  type          ChatType
+  name          String?
+  workPointId   String?           @unique @map("work_point_id")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  lastMessageAt DateTime?         @map("last_message_at")
+
+  workPoint     WorkPoint?        @relation(fields: [workPointId], references: [id], onDelete: Cascade)
+  participants  ChatParticipant[]
+  messages      Message[]
+
+  @@index([lastMessageAt])
+  @@map("chats")
+}
+
+model ChatParticipant {
+  id         String    @id @default(uuid())
+  chatId     String    @map("chat_id")
+  userId     String    @map("user_id")
+  joinedAt   DateTime  @default(now()) @map("joined_at")
+  lastReadAt DateTime? @map("last_read_at")
+
+  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([userId])
+  @@map("chat_participants")
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  chatId         String    @map("chat_id")
+  senderId       String    @map("sender_id")
+  body           String
+  attachmentUrl  String?   @map("attachment_url")
+  attachmentName String?   @map("attachment_name")
+  attachmentType String?   @map("attachment_type")
+  replyToId      String?   @map("reply_to_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  editedAt       DateTime? @map("edited_at")
+
+  chat           Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender         User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo        Message?  @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        Message[] @relation("MessageReply")
+
+  @@index([chatId, createdAt])
+  @@map("messages")
+}
