@@ -12,6 +12,12 @@ export const useWorkPoints = () =>
     queryFn: () => workPointAPI.list(),
   });
 
+export const useMyAssignedWorkPoints = () =>
+  useQuery({
+    queryKey: QUERY_KEYS.workPoints.assignedToMe,
+    queryFn: () => workPointAPI.listAssignedToMe(),
+  });
+
 export const useWorkPoint = (workPointId: string | null) =>
   useQuery({
     queryKey: workPointId

@@ -24,7 +24,7 @@ export type ScanResult =
       checkedInAt: string;
     }
   | {
-      event: "CHECK_OUT";
+      event: "CHECK_OUT" | "ALREADY_COMPLETED";
       workPointName: string;
       date: string;
       checkedInAt: string;

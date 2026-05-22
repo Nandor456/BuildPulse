@@ -39,6 +39,19 @@ type SelectedWorkPointDetail = SelectedWorkPointSummary & {
   workers: Array<PublicUserSummary & { hourlyWage: number | null }>;
 };
 
+type SelectedAssignedWorkPointSummary = {
+  id: string;
+  name: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  description: string | null;
+  userId: string | null;
+  uploadedAt: Date;
+  deadline: Date | null;
+  user: PublicUserSummary | null;
+};
+
 export type WorkPointInput = {
   name: string;
   address: string;
@@ -65,6 +78,11 @@ export type WorkPointSummary = {
   workerCount: number;
   attendanceCount: number;
 };
+
+export type AssignedWorkPointSummary = Omit<
+  WorkPointSummary,
+  "workerCount" | "attendanceCount"
+>;
 
 export type WorkPointDetail = WorkPointSummary & {
   workers: Array<PublicUserSummary & {
@@ -104,6 +122,19 @@ const workPointDetailSelect = {
   },
 } as const;
 
+const assignedWorkPointSelect = {
+  id: true,
+  name: true,
+  address: true,
+  lat: true,
+  lng: true,
+  description: true,
+  userId: true,
+  uploadedAt: true,
+  deadline: true,
+  user: { select: publicUserSelect },
+} as const;
+
 function toSummary(workPoint: SelectedWorkPointSummary): WorkPointSummary {
   return {
     id: workPoint.id,
@@ -125,6 +156,23 @@ function toDetail(workPoint: SelectedWorkPointDetail): WorkPointDetail {
   return {
     ...toSummary(workPoint),
     workers: workPoint.workers,
+  };
+}
+
+function toAssignedSummary(
+  workPoint: SelectedAssignedWorkPointSummary,
+): AssignedWorkPointSummary {
+  return {
+    id: workPoint.id,
+    name: workPoint.name,
+    address: workPoint.address,
+    lat: workPoint.lat,
+    lng: workPoint.lng,
+    description: workPoint.description,
+    userId: workPoint.userId,
+    uploadedAt: workPoint.uploadedAt.toISOString(),
+    deadline: workPoint.deadline?.toISOString() ?? null,
+    owner: workPoint.user,
   };
 }
 
@@ -188,6 +236,22 @@ export async function listWorkPoints(): Promise<WorkPointSummary[]> {
   });
 
   return workPoints.map(toSummary);
+}
+
+export async function listMyAssignedWorkPoints(
+  userId: string,
+): Promise<AssignedWorkPointSummary[]> {
+  const workPoints = await prisma.workPoint.findMany({
+    where: {
+      workers: {
+        some: { id: userId },
+      },
+    },
+    select: assignedWorkPointSelect,
+    orderBy: [{ uploadedAt: "desc" }],
+  });
+
+  return workPoints.map(toAssignedSummary);
 }
 
 export async function getWorkPointById(id: string): Promise<WorkPointDetail | null> {

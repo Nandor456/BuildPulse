@@ -4,6 +4,7 @@ import { QueryClient } from "@tanstack/react-query";
 export const QUERY_KEYS = {
   workPoints: {
     all: ["workpoints"] as const,
+    assignedToMe: ["workpoints", "me"] as const,
     detail: (workPointId: string) => ["workpoints", workPointId] as const,
   },
   workers: {

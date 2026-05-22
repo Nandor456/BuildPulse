@@ -50,10 +50,6 @@ export async function checkinController(
         });
         return;
       }
-      if (code === "ALREADY_COMPLETED") {
-        res.status(409).json({ error: "Already completed today" });
-        return;
-      }
     }
     console.error("checkinController error:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -296,7 +292,7 @@ export async function exportAttendanceController(
     const formatDate = (d: Date) =>
       new Date(d).toLocaleDateString("ro-RO", { timeZone: "UTC" });
     const formatDateTime = (d: Date) => new Date(d).toLocaleString("ro-RO");
-    const formatHours = (h: number) => h.toFixed(2);
+    const formatHours = (h: number) => Math.ceil(h);
 
     for (const r of records) {
       const hours =
@@ -354,7 +350,7 @@ export async function exportAttendanceController(
         email: s.email,
         totalDays: s.totalDays,
         completeDays: s.completeDays,
-        totalHours: s.totalHours.toFixed(2),
+        totalHours: Math.ceil(s.totalHours),
         totalEarnings: s.totalEarnings != null ? s.totalEarnings.toFixed(2) : "—",
         firstDate: s.firstDate ? formatDate(s.firstDate) : "—",
         lastDate: s.lastDate ? formatDate(s.lastDate) : "—",

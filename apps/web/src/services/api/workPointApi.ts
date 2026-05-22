@@ -26,6 +26,11 @@ export interface WorkPointSummary {
   attendanceCount: number;
 }
 
+export type AssignedWorkPointSummary = Omit<
+  WorkPointSummary,
+  "workerCount" | "attendanceCount"
+>;
+
 export interface WorkPointDetail extends WorkPointSummary {
   workers: WorkPointWorker[];
 }
@@ -45,6 +50,13 @@ export type WorkPointUpdate = Omit<WorkPointInput, "workerIds">;
 export const workPointAPI = {
   async list(): Promise<WorkPointSummary[]> {
     const res = await api.get<{ workPoints: WorkPointSummary[] }>("/workpoints");
+    return res.data.workPoints;
+  },
+
+  async listAssignedToMe(): Promise<AssignedWorkPointSummary[]> {
+    const res = await api.get<{ workPoints: AssignedWorkPointSummary[] }>(
+      "/workpoints/me",
+    );
     return res.data.workPoints;
   },
 

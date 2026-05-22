@@ -13,7 +13,7 @@ import {
     useSidebar,
     SidebarSeparator,
 } from "@/components/ui/sidebar"
-import { Building2, MessageSquare, Users, ChevronDown, ChevronsUpDown, Moon, Sun, LogOut } from "lucide-react";
+import { Building2, Home as HomeIcon, MessageSquare, Users, ChevronDown, ChevronsUpDown, Moon, Sun, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import buildPulseLogo from "@/assets/buildpulselogo.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +34,7 @@ export function AppSidebar() {
     const isDarkMode = mode === "dark";
     const canManageWorkPoints = user?.role === "ADMIN" || user?.role === "LEADER";
     const canManageUsers = user?.role === "ADMIN";
+    const isWorker = user?.role === "WORKER";
     const isUsersRoute =
         canManageUsers &&
         (location.pathname.startsWith("/invitations") || location.pathname.startsWith("/workers"));
@@ -59,6 +60,19 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarMenu>
+                        {isWorker && (
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={location.pathname === "/"}
+                                >
+                                    <Link to="/">
+                                        <HomeIcon />
+                                        <span>Home</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        )}
                         <SidebarMenuItem>
                             <SidebarMenuButton
                                 asChild

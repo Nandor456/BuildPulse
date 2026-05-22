@@ -14,10 +14,17 @@ import WorkerManagementPage from "./pages/WorkerManagementPage";
 import WorkpointPage from "./pages/WorkpointPage";
 import WorkpointDetailPage from "./pages/WorkpointDetailPage";
 import CheckinPage from "./pages/CheckinPage";
+import WorkerHomePage from "./pages/WorkerHomePage";
 import { useAuth } from "./hooks/useAuth";
 import type { UserRole } from "./types/UserTypes";
 
 function Home() {
+    const { user } = useAuth();
+
+    if (user?.role === "WORKER") {
+        return <WorkerHomePage />;
+    }
+
     return <main>BuildPulse</main>;
 }
 

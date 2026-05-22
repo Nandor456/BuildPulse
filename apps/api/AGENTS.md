@@ -59,7 +59,7 @@ User routes:
 
 `POST /api/attendance/checkin`
 - Body: `{ qrToken }`
-- Returns a scan result for `CHECK_IN` or `CHECK_OUT`.
+- Returns a scan result for `CHECK_IN`, `CHECK_OUT`, or `ALREADY_COMPLETED`.
 
 `GET /api/attendance/me/daily?year=YYYY&month=M`
 `GET /api/attendance/me/monthly?year=YYYY&month=M`
@@ -86,8 +86,13 @@ Admin routes:
 `GET /api/attendance/workpoint/:id/export?from=YYYY-MM-DD&to=YYYY-MM-DD`
 - Returns an Excel file with attendance + summary sheets.
 
-## Work point and worker routes (ADMIN)
+## Work point and worker routes
 
+User routes:
+`GET /api/workpoints/me`
+- Returns workpoints assigned to the current authenticated user.
+
+Admin/leader workpoint routes:
 `GET /api/workpoints`
 `POST /api/workpoints`
 `GET /api/workpoints/:id`

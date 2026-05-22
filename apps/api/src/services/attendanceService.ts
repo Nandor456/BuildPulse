@@ -27,15 +27,17 @@ export type AttendanceSummary = {
 
 export type ScanResult =
   | { event: "CHECK_IN"; workPointName: string; date: Date; checkedInAt: Date }
-  | {
-      event: "CHECK_OUT";
-      workPointName: string;
-      date: Date;
-      checkedInAt: Date;
-      checkedOutAt: Date;
-      hours: number;
-      earnings: number | null;
-    };
+  | CompletedScanResult;
+
+export type CompletedScanResult = {
+  event: "CHECK_OUT" | "ALREADY_COMPLETED";
+  workPointName: string;
+  date: Date;
+  checkedInAt: Date;
+  checkedOutAt: Date;
+  hours: number;
+  earnings: number | null;
+};
 
 export type DailyStatRow = {
   id: string;
@@ -59,6 +61,35 @@ export type MonthlySummary = {
 function computeHours(checkedInAt: Date, checkedOutAt: Date): number {
   const ms = checkedOutAt.getTime() - checkedInAt.getTime();
   return Math.max(0, ms / (1000 * 60 * 60));
+}
+
+async function buildCompletedScanResult(params: {
+  userId: string;
+  event: CompletedScanResult["event"];
+  workPointName: string;
+  date: Date;
+  checkedInAt: Date;
+  checkedOutAt: Date;
+}): Promise<CompletedScanResult> {
+  const hours = computeHours(params.checkedInAt, params.checkedOutAt);
+
+  const worker = await prisma.user.findUnique({
+    where: { id: params.userId },
+    select: { hourlyWage: true },
+  });
+
+  const earnings =
+    worker?.hourlyWage != null ? hours * worker.hourlyWage : null;
+
+  return {
+    event: params.event,
+    workPointName: params.workPointName,
+    date: params.date,
+    checkedInAt: params.checkedInAt,
+    checkedOutAt: params.checkedOutAt,
+    hours,
+    earnings,
+  };
 }
 
 export async function recordAttendance(params: {
@@ -119,36 +150,31 @@ export async function recordAttendance(params: {
   }
 
   if (existing.checkedOutAt !== null) {
-    const err = new Error("Already completed today");
-    (err as NodeJS.ErrnoException).code = "ALREADY_COMPLETED";
-    throw err;
+    return buildCompletedScanResult({
+      userId: params.userId,
+      event: "ALREADY_COMPLETED",
+      workPointName: workPoint.name,
+      date,
+      checkedInAt: existing.checkedInAt,
+      checkedOutAt: existing.checkedOutAt,
+    });
   }
 
   const checkedOutAt = new Date();
-  const hours = computeHours(existing.checkedInAt, checkedOutAt);
-
-  const worker = await prisma.user.findUnique({
-    where: { id: params.userId },
-    select: { hourlyWage: true },
-  });
 
   await prisma.attendance.update({
     where: { id: existing.id },
     data: { checkedOutAt },
   });
 
-  const earnings =
-    worker?.hourlyWage != null ? hours * worker.hourlyWage : null;
-
-  return {
+  return buildCompletedScanResult({
+    userId: params.userId,
     event: "CHECK_OUT",
     workPointName: workPoint.name,
     date,
     checkedInAt: existing.checkedInAt,
     checkedOutAt,
-    hours,
-    earnings,
-  };
+  });
 }
 
 export async function listAttendance(params: {

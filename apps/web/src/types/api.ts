@@ -30,7 +30,7 @@ export type ScanResult =
       checkedOutAt: string
       date: string
       earnings: number | null
-      event: 'CHECK_OUT'
+      event: 'CHECK_OUT' | 'ALREADY_COMPLETED'
       hours: number
       workPointName: string
     }

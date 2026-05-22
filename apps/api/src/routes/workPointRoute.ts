@@ -8,6 +8,7 @@ import {
   createWorkPointController,
   deleteWorkPointController,
   getWorkPointController,
+  listMyAssignedWorkPointsController,
   listWorkPointsController,
   updateWorkPointController,
 } from "../controllers/workPointController.js";
@@ -18,6 +19,8 @@ import {
 } from "../schemas/workPointSchemas.js";
 
 const router = Router();
+
+router.get("/me", ensureAuthenticated, listMyAssignedWorkPointsController);
 
 router.use(ensureAuthenticated, ensureRole("ADMIN", "LEADER"));
 

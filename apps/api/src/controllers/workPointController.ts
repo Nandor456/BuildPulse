@@ -4,6 +4,7 @@ import {
   createWorkPoint,
   deleteWorkPoint,
   getWorkPointById,
+  listMyAssignedWorkPoints,
   listWorkPoints,
   updateWorkPoint,
   type UpdateWorkPointInput,
@@ -30,6 +31,20 @@ export async function listWorkPointsController(
   } catch (error) {
     res.status(500).json({
       error: messageForError(error, "Failed to list work points"),
+    });
+  }
+}
+
+export async function listMyAssignedWorkPointsController(
+  req: SessionRequest,
+  res: Response,
+) {
+  try {
+    const workPoints = await listMyAssignedWorkPoints(req.session.userId!);
+    res.json({ workPoints });
+  } catch (error) {
+    res.status(500).json({
+      error: messageForError(error, "Failed to list assigned work points"),
     });
   }
 }

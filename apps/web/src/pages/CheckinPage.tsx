@@ -48,6 +48,19 @@ export default function CheckinPage() {
   }
 
   const result = checkin.data;
+  const completedResult = result && result.event !== "CHECK_IN" ? result : null;
+  const resultAlertClassName =
+    result?.event === "CHECK_IN"
+      ? "border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+      : result?.event === "ALREADY_COMPLETED"
+        ? "border-amber-500/30 text-amber-700 dark:text-amber-300"
+        : undefined;
+  const resultLabel =
+    result?.event === "CHECK_IN"
+      ? "Checked in"
+      : result?.event === "CHECK_OUT"
+        ? "Checked out"
+        : "Already completed today";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
@@ -63,7 +76,7 @@ export default function CheckinPage() {
             )}
           </div>
           <div>
-            <h1 className="text-xl font-semibold">Attendance check-in</h1>
+            <h1 className="text-xl font-semibold">Attendance scan</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {checkin.isPending
                 ? "Recording attendance..."
@@ -87,6 +100,7 @@ export default function CheckinPage() {
               className="w-full"
               onClick={() => {
                 window.sessionStorage.removeItem(`checkin:${qrToken}`);
+                checkin.reset();
                 checkin.mutate(qrToken);
               }}
             >
@@ -98,41 +112,50 @@ export default function CheckinPage() {
 
         {result && (
           <div className="space-y-4">
-            <Alert className={result.event === "CHECK_IN" ? "border-emerald-500/30 text-emerald-700 dark:text-emerald-300" : undefined}>
-              {result.event === "CHECK_IN" ? "Checked in" : "Checked out"}
-            </Alert>
+            <Alert className={resultAlertClassName}>{resultLabel}</Alert>
+            {result.event === "ALREADY_COMPLETED" && (
+              <Alert>
+                This attendance was already completed for today.
+              </Alert>
+            )}
             <div className="rounded-md border">
+              <div className="grid grid-cols-2 gap-3 border-b px-4 py-3 text-sm">
+                <span className="text-muted-foreground">Workpoint</span>
+                <span className="text-right font-medium">{result.workPointName}</span>
+              </div>
               <div className="grid grid-cols-2 gap-3 border-b px-4 py-3 text-sm">
                 <span className="text-muted-foreground">Date</span>
                 <span className="text-right font-medium">{formatDate(result.date)}</span>
               </div>
-              <div className="grid grid-cols-2 gap-3 border-b px-4 py-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 px-4 py-3 text-sm">
                 <span className="text-muted-foreground">Checked in</span>
                 <span className="text-right font-medium">
                   {formatDateTime(result.checkedInAt)}
                 </span>
               </div>
-              {result.event === "CHECK_OUT" && (
-                <>
-                  <div className="grid grid-cols-2 gap-3 border-b px-4 py-3 text-sm">
-                    <span className="text-muted-foreground">Checked out</span>
-                    <span className="text-right font-medium">
-                      {formatDateTime(result.checkedOutAt)}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 border-b px-4 py-3 text-sm">
-                    <span className="text-muted-foreground">Hours</span>
-                    <span className="text-right font-medium">{formatHours(result.hours)}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 px-4 py-3 text-sm">
-                    <span className="text-muted-foreground">Earnings</span>
-                    <span className="text-right font-medium">
-                      {formatMoney(result.earnings)}
-                    </span>
-                  </div>
-                </>
-              )}
             </div>
+            {completedResult && (
+              <div className="rounded-md border">
+                <div className="grid grid-cols-2 gap-3 border-b px-4 py-3 text-sm">
+                  <span className="text-muted-foreground">Checked out</span>
+                  <span className="text-right font-medium">
+                    {formatDateTime(completedResult.checkedOutAt)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 border-b px-4 py-3 text-sm">
+                  <span className="text-muted-foreground">Hours</span>
+                  <span className="text-right font-medium">
+                    {formatHours(completedResult.hours)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 px-4 py-3 text-sm">
+                  <span className="text-muted-foreground">Earnings</span>
+                  <span className="text-right font-medium">
+                    {formatMoney(completedResult.earnings)}
+                  </span>
+                </div>
+              </div>
+            )}
             <Button asChild className="w-full">
               <RouterLink to="/messages">Done</RouterLink>
             </Button>

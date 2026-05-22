@@ -24,8 +24,8 @@ export function formatDateTime(value: string | null | undefined) {
 }
 
 export function formatHours(value: number | null | undefined) {
-  if (value === null || value === undefined) return '0.0h'
-  return `${value.toFixed(1)}h`
+  if (value === null || value === undefined) return '0h'
+  return `${Math.ceil(value)}h`
 }
 
 export function formatMoney(value: number | null | undefined) {
