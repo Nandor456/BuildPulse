@@ -1,17 +1,24 @@
-# mobile
+# BuildPulse Mobile
 
-A new Flutter project.
+Native Flutter client for BuildPulse. It mirrors the React web app flows using
+the existing API and Socket.IO backend.
 
-## Getting Started
+## Running
 
-This project is a starting point for a Flutter application.
+Update the environment files in the app root:
 
-A few resources to get you started if this is your first Flutter project:
+- `.env.dev.ios` for iOS simulator (defaults to `http://localhost:4000/api`)
+- `.env.dev.android` for Android emulator (defaults to `http://10.0.2.2:4000/api`)
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+The app loads `.env.dev.{platform}` in debug/profile and `.env.prod.{platform}` in release.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+flutter run
+```
+
+## Checks
+
+```sh
+flutter analyze
+flutter test
+```

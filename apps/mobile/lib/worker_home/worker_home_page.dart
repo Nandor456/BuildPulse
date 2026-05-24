@@ -1,0 +1,315 @@
+import 'package:flutter/material.dart';
+
+import '../core/app_scope.dart';
+import '../core/formatters.dart';
+import '../core/models.dart';
+import '../core/widgets.dart';
+
+class WorkerHomePage extends StatefulWidget {
+  const WorkerHomePage({super.key});
+
+  @override
+  State<WorkerHomePage> createState() => _WorkerHomePageState();
+}
+
+class _WorkerHomePageState extends State<WorkerHomePage> {
+  String _period = currentPeriod();
+  bool _isLoading = true;
+  String? _error;
+  List<AssignedWorkPointSummary> _workPoints = const [];
+  List<DailyStatRow> _rows = const [];
+  MonthlySummary? _summary;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    final api = AppScope.apiOf(context);
+    final (year, month) = parsePeriod(_period);
+    try {
+      final results = await Future.wait([
+        api.listMyWorkPoints(),
+        api.myDailyStats(year, month),
+        api.myMonthlySummary(year, month),
+      ]);
+      setState(() {
+        _workPoints = results[0] as List<AssignedWorkPointSummary>;
+        _rows = results[1] as List<DailyStatRow>;
+        _summary = results[2] as MonthlySummary;
+      });
+    } catch (error) {
+      setState(() => _error = errorMessage(error, 'Failed to load your worker dashboard.'));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (year, month) = parsePeriod(_period);
+    final summary = _summary;
+    final hasWage = summary?.hourlyWage != null;
+    final openRecords = ((summary?.totalDays ?? 0) - (summary?.completeDays ?? 0)).clamp(0, 9999);
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          SectionCard(
+            title: 'Your BuildPulse home',
+            subtitle: 'Attendance, hours, assigned workpoints, and wage-based earnings.',
+            trailing: IconButton.outlined(
+              tooltip: 'Refresh',
+              onPressed: _load,
+              icon: const Icon(Icons.refresh),
+            ),
+            child: Row(
+              children: [
+                IconButton.filledTonal(
+                  onPressed: () {
+                    setState(() => _period = periodAfter(_period, -1));
+                    _load();
+                  },
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      formatMonthLabel(year, month),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ),
+                IconButton.filledTonal(
+                  onPressed: () {
+                    setState(() => _period = periodAfter(_period, 1));
+                    _load();
+                  },
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (_isLoading)
+            const LoadingView(label: 'Loading dashboard...')
+          else if (_error != null)
+            ErrorBanner(_error!)
+          else ...[
+            GridView.count(
+              crossAxisCount: MediaQuery.sizeOf(context).width > 640 ? 3 : 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 1.25,
+              children: [
+                StatTile(
+                  label: 'Earnings',
+                  value: hasWage ? formatMoney(summary?.totalEarnings, precise: true) : 'Unavailable',
+                  icon: Icons.payments_outlined,
+                  helper: hasWage ? 'Completed attendances' : 'Ask an admin to set your wage',
+                ),
+                StatTile(
+                  label: 'Hourly wage',
+                  value: formatMoney(summary?.hourlyWage, precise: true),
+                  icon: Icons.price_check_outlined,
+                  helper: 'Worker profile',
+                ),
+                StatTile(
+                  label: 'Hours',
+                  value: formatHours(summary?.totalHours),
+                  icon: Icons.schedule,
+                  helper: '${summary?.completeDays ?? 0} complete days',
+                ),
+                StatTile(
+                  label: 'Days',
+                  value: '${summary?.totalDays ?? 0}',
+                  icon: Icons.calendar_month_outlined,
+                  helper: '${summary?.completeDays ?? 0} complete',
+                ),
+                StatTile(
+                  label: 'Open',
+                  value: '$openRecords',
+                  icon: Icons.warning_amber_outlined,
+                  helper: 'Missing checkout',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _AssignedWorkpoints(workPoints: _workPoints, rows: _rows, hasWage: hasWage),
+            const SizedBox(height: 16),
+            _AttendanceByWorkpoint(
+              workPoints: _workPoints,
+              rows: _rows,
+              hasWage: hasWage,
+              periodLabel: formatMonthLabel(year, month),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AssignedWorkpoints extends StatelessWidget {
+  const _AssignedWorkpoints({
+    required this.workPoints,
+    required this.rows,
+    required this.hasWage,
+  });
+
+  final List<AssignedWorkPointSummary> workPoints;
+  final List<DailyStatRow> rows;
+  final bool hasWage;
+
+  @override
+  Widget build(BuildContext context) {
+    if (workPoints.isEmpty) {
+      return const EmptyState(
+        icon: Icons.business_outlined,
+        title: 'No workpoints assigned',
+        message: 'Your assignments will show up here.',
+      );
+    }
+
+    return SectionCard(
+      title: 'Assigned workpoints',
+      subtitle: 'Current workpoints assigned to you.',
+      child: Column(
+        children: workPoints.map((workPoint) {
+          final workPointRows = rows.where((row) => row.workPoint.id == workPoint.id).toList();
+          final hours = workPointRows.fold<double>(0, (sum, row) => sum + row.hours);
+          final earnings = workPointRows.fold<double>(0, (sum, row) => sum + row.earnings);
+          final complete = workPointRows.where((row) => row.complete).length;
+          return ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const CircleAvatar(child: Icon(Icons.business_outlined)),
+            title: Text(workPoint.name),
+            subtitle: Text('${workPoint.address}\nDeadline: ${formatDate(workPoint.deadline)}'),
+            isThreeLine: true,
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(formatHours(hours), style: Theme.of(context).textTheme.titleSmall),
+                Text(
+                  hasWage ? formatMoney(earnings, precise: true) : '$complete complete',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _AttendanceByWorkpoint extends StatelessWidget {
+  const _AttendanceByWorkpoint({
+    required this.workPoints,
+    required this.rows,
+    required this.hasWage,
+    required this.periodLabel,
+  });
+
+  final List<AssignedWorkPointSummary> workPoints;
+  final List<DailyStatRow> rows;
+  final bool hasWage;
+  final String periodLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final assignedIds = workPoints.map((workPoint) => workPoint.id).toSet();
+    final grouped = <String, List<DailyStatRow>>{};
+    for (final row in rows) {
+      grouped.putIfAbsent(row.workPoint.id, () => []).add(row);
+    }
+
+    final groups = [
+      ...workPoints.map((workPoint) => (
+            id: workPoint.id,
+            name: workPoint.name,
+            current: true,
+            rows: grouped[workPoint.id] ?? <DailyStatRow>[],
+          )),
+      ...grouped.entries
+          .where((entry) => !assignedIds.contains(entry.key))
+          .map((entry) => (
+                id: entry.key,
+                name: entry.value.first.workPoint.name,
+                current: false,
+                rows: entry.value,
+              )),
+    ];
+
+    if (groups.isEmpty) {
+      return EmptyState(
+        icon: Icons.schedule,
+        title: 'No attendance records',
+        message: 'No attendance records for $periodLabel.',
+      );
+    }
+
+    return SectionCard(
+      title: 'Attendance by workpoint',
+      subtitle: 'Your own check-ins and check-outs for $periodLabel.',
+      child: Column(
+        children: groups.map((group) {
+          final hours = group.rows.fold<double>(0, (sum, row) => sum + row.hours);
+          return ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: Text(group.name),
+            subtitle: Text('${formatHours(hours)} · ${group.rows.length} records'),
+            trailing: group.current
+                ? null
+                : Chip(
+                    label: const Text('Previous'),
+                    visualDensity: VisualDensity.compact,
+                    side: BorderSide.none,
+                    backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                  ),
+            children: group.rows.isEmpty
+                ? [ListTile(title: Text('No attendance recorded here for $periodLabel.'))]
+                : group.rows
+                    .map(
+                      (row) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(formatDate(row.date)),
+                        subtitle: Text(
+                          '${formatDateTime(row.checkedInAt)} - ${formatDateTime(row.checkedOutAt)}',
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(formatHours(row.hours)),
+                            Text(
+                              row.complete
+                                  ? hasWage
+                                      ? formatMoney(row.earnings)
+                                      : 'Unavailable'
+                                  : 'Open',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+

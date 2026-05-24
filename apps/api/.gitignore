@@ -12,3 +12,5 @@ private
 .idea
 .vscode
 *.iml
+
+uploads/
