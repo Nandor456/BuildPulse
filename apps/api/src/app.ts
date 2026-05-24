@@ -5,19 +5,31 @@ import morgan from "morgan";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import router from "./routes/index.js";
+import { getAllowedCorsOrigins, loadEnvironment } from "./config/env.js";
 import { prisma } from "../database/prisma.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const { nodeEnv } = loadEnvironment(import.meta.url);
+const allowedCorsOrigins = new Set(getAllowedCorsOrigins());
 
 const app = express();
 
-app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:3000"],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedCorsOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, false);
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json());
-app.use(morgan("tiny"));
+app.use(morgan(nodeEnv === "production" ? "combined" : "tiny"));
 
 app.use("/api", router);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -47,6 +59,5 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
         : "Request failed";
   res.status(status).json({ error: message });
 });
-
 
 export default app;

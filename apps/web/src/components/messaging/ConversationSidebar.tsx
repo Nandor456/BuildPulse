@@ -39,8 +39,6 @@ export function ConversationSidebar({ activeChatId, onSelectChat }: Conversation
     onSelectChat(chatId);
   }
 
-  const totalUnread = chats.reduce((sum: number, c: ChatListItem) => sum + c.unreadCount, 0);
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="border-b border-border/60 px-4 py-4">
@@ -53,11 +51,6 @@ export function ConversationSidebar({ activeChatId, onSelectChat }: Conversation
               <span className="text-base font-semibold tracking-tight">Conversations</span>
             </div>
           </div>
-          {totalUnread > 0 && (
-            <span className="mt-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground shadow-sm">
-              {totalUnread > 99 ? "99+" : totalUnread}
-            </span>
-          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -89,22 +82,22 @@ export function ConversationSidebar({ activeChatId, onSelectChat }: Conversation
       <div className="flex-1 overflow-y-auto px-3 pb-3">
         {isLoading
           ? Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-2xl px-3 py-3">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-3 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
+            <div key={i} className="flex items-center gap-3 rounded-2xl px-3 py-3">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
               </div>
-            ))
+            </div>
+          ))
           : filtered.map((chat: ChatListItem) => (
-              <ConversationListItem
-                key={chat.id}
-                chat={chat}
-                isActive={chat.id === activeChatId}
-                onClick={() => handleSelect(chat.id)}
-              />
-            ))}
+            <ConversationListItem
+              key={chat.id}
+              chat={chat}
+              isActive={chat.id === activeChatId}
+              onClick={() => handleSelect(chat.id)}
+            />
+          ))}
 
         {!isLoading && filtered.length === 0 && (
           <div className="mt-8 rounded-2xl border border-dashed border-border/70 bg-background/55 px-4 py-6 text-center text-sm text-muted-foreground">

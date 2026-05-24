@@ -1,13 +1,14 @@
 node_modules
 package-lock.json
 .env
+.env.*
+!.env.example
 dist
 build
 coverage
 logs
 private
 *.log
-*.env
 .DS_Store
 .idea
 .vscode

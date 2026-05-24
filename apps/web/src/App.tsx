@@ -26,7 +26,9 @@ function Home() {
         return <WorkerHomePage />;
     }
 
-    return <main>BuildPulse</main>;
+    return <RequireRoles roles={["ADMIN", "LEADER"]}>
+        <WorkpointDetailPage />
+    </RequireRoles>;
 }
 
 function RequireRoles({ roles, children }: { roles: UserRole[]; children: ReactNode }) {

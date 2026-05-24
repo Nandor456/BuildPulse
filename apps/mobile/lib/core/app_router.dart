@@ -28,9 +28,7 @@ GoRouter createAppRouter(AuthController auth) {
         path: '/login',
         pageBuilder: (context, state) => _buildPage(
           state,
-          LoginPage(
-            redirectPath: state.uri.queryParameters['redirect'],
-          ),
+          LoginPage(redirectPath: state.uri.queryParameters['redirect']),
         ),
       ),
       GoRoute(
@@ -56,19 +54,23 @@ GoRouter createAppRouter(AuthController auth) {
         routes: [
           GoRoute(
             path: '/',
-            pageBuilder: (context, state) => _buildPage(state, const HomeRoutePage()),
+            pageBuilder: (context, state) =>
+                _buildPage(state, const HomeRoutePage()),
           ),
           GoRoute(
             path: '/messages',
-            pageBuilder: (context, state) => _buildPage(state, const MessagingPage()),
+            pageBuilder: (context, state) =>
+                _buildPage(state, const MessagingPage()),
           ),
           GoRoute(
             path: '/documents',
-            pageBuilder: (context, state) => _buildPage(state, const DocumentsPage()),
+            pageBuilder: (context, state) =>
+                _buildPage(state, const DocumentsPage()),
           ),
           GoRoute(
             path: '/workpoints',
-            pageBuilder: (context, state) => _buildPage(state, const WorkpointsPage()),
+            pageBuilder: (context, state) =>
+                _buildPage(state, const WorkpointsPage()),
           ),
           GoRoute(
             path: '/workpoints/:id',
@@ -79,11 +81,13 @@ GoRouter createAppRouter(AuthController auth) {
           ),
           GoRoute(
             path: '/workers',
-            pageBuilder: (context, state) => _buildPage(state, const WorkersPage()),
+            pageBuilder: (context, state) =>
+                _buildPage(state, const WorkersPage()),
           ),
           GoRoute(
             path: '/invitations',
-            pageBuilder: (context, state) => _buildPage(state, const InvitationsPage()),
+            pageBuilder: (context, state) =>
+                _buildPage(state, const InvitationsPage()),
           ),
         ],
       ),
@@ -117,10 +121,13 @@ String? buildPulseRedirect({
   if (isAuthRoute) return '/';
 
   if (path == '/documents' && role != UserRole.worker) return '/';
-  if (path.startsWith('/workpoints') && role != UserRole.admin && role != UserRole.leader) {
+  if (path.startsWith('/workpoints') &&
+      role != UserRole.admin &&
+      role != UserRole.leader) {
     return '/';
   }
-  if (path == '/workers' && role != UserRole.admin && role != UserRole.leader) return '/';
+  if (path == '/workers' && role != UserRole.admin && role != UserRole.leader)
+    return '/';
   if (path == '/invitations' && role != UserRole.admin) return '/';
 
   return null;
@@ -133,26 +140,6 @@ class HomeRoutePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = AppShell.auth(context);
     if (auth.isWorker) return const WorkerHomePage();
-    return const AdminHomePage();
-  }
-}
-
-class AdminHomePage extends StatelessWidget {
-  const AdminHomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const SizedBox(height: 8),
-        Text('BuildPulse', style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 6),
-        Text(
-          'Open workpoints, manage teams, and keep conversations moving from the drawer.',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ],
-    );
+    return const WorkpointsPage();
   }
 }

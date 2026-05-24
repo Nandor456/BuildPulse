@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'node --loader ts-node/esm --no-warnings' src/index.ts",
+    "dev": "NODE_ENV=development nodemon --watch 'src/**/*.ts' --exec 'node --loader ts-node/esm --no-warnings' src/index.ts",
     "build": "npm run clean && tsc",
-    "start": "node dist/src/index.js",
+    "start": "NODE_ENV=production node dist/src/index.js",
     "prisma:studio": "cd database && npx prisma studio --config ./prisma.config.ts",
     "prisma:generate": "cd database && npx prisma generate --config ./prisma.config.ts",
     "prisma:deploy": "cd database && npx prisma migrate deploy --config ./prisma.config.ts",
