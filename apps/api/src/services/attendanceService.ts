@@ -3,7 +3,6 @@ import {
   ATTENDANCE_TIMEZONE,
   attendanceDateTimeToUtc,
   dateInZone,
-  todayInZone,
 } from "../utils/dateHelpers.js";
 import QRCode from "qrcode";
 
@@ -76,6 +75,8 @@ export type MonthlySummary = {
 const GEOFENCE_RADIUS_METERS = 100;
 const EARTH_RADIUS_METERS = 6_371_000;
 const QUARTER_HOUR_MS = 15 * 60 * 1000;
+const ATTENDANCE_RECORDING_START_HOUR = 6;
+const ATTENDANCE_RECORDING_END_HOUR = 22;
 
 type Coordinates = {
   lat: number;
@@ -103,6 +104,26 @@ export function distanceMeters(from: Coordinates, to: Coordinates): number {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return EARTH_RADIUS_METERS * c;
+}
+
+function assertWithinAttendanceRecordingWindow(now: Date): void {
+  const date = dateInZone(now, ATTENDANCE_TIMEZONE);
+  const startsAt = attendanceDateTimeToUtc({
+    date,
+    hour: ATTENDANCE_RECORDING_START_HOUR,
+    tz: ATTENDANCE_TIMEZONE,
+  });
+  const endsAt = attendanceDateTimeToUtc({
+    date,
+    hour: ATTENDANCE_RECORDING_END_HOUR,
+    tz: ATTENDANCE_TIMEZONE,
+  });
+
+  if (now < startsAt || now >= endsAt) {
+    const err = new Error("Attendance can only be recorded between 6:00 AM and 10:00 PM");
+    (err as NodeJS.ErrnoException).code = "FORBIDDEN";
+    throw err;
+  }
 }
 
 async function closeEligibleOpenAttendances(now: Date): Promise<number> {
@@ -215,7 +236,9 @@ export async function recordAttendance(params: {
   workerLocation: Coordinates;
   source: "QR" | "MANUAL";
 }): Promise<ScanResult> {
-  await autoCloseOpenAttendances();
+  const now = new Date();
+
+  await autoCloseOpenAttendances(now);
 
   const workPoint = await prisma.workPoint.findUnique({
     where: { qrToken: params.qrToken },
@@ -257,7 +280,7 @@ export async function recordAttendance(params: {
     throw err;
   }
 
-  const date = todayInZone();
+  const date = dateInZone(now, ATTENDANCE_TIMEZONE);
 
   const existing = await prisma.attendance.findUnique({
     where: {
@@ -276,11 +299,14 @@ export async function recordAttendance(params: {
   });
 
   if (!existing) {
+    assertWithinAttendanceRecordingWindow(now);
+
     const record = await prisma.attendance.create({
       data: {
         workerId: params.userId,
         workPointId: workPoint.id,
         date,
+        checkedInAt: now,
         source: params.source,
       },
       select: { checkedInAt: true },
@@ -307,7 +333,9 @@ export async function recordAttendance(params: {
     });
   }
 
-  const checkedOutAt = new Date();
+  assertWithinAttendanceRecordingWindow(now);
+
+  const checkedOutAt = now;
 
   await prisma.attendance.update({
     where: { id: existing.id },
