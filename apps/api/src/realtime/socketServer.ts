@@ -6,6 +6,7 @@ import {
   getChatParticipantIds,
   getUserChatIds,
 } from "../services/messagingService.js";
+import { notifyMessageRecipients } from "../services/pushNotificationService.js";
 import {
   getAccessTokenFromSocket,
   verifyAccessToken,
@@ -122,6 +123,9 @@ export function initSocketServer(httpServer: HttpServer) {
 
         // Broadcast to everyone in the chat room
         io.to(`chat:${data.chatId}`).emit("message:new", message as unknown as Record<string, unknown>);
+        void notifyMessageRecipients(message).catch((error) => {
+          console.error("[push] message notification error:", error);
+        });
 
         // Notify participants who aren't in this room (sidebar bump)
         const participantIds = await getChatParticipantIds(data.chatId);
@@ -218,8 +222,7 @@ export function emitAttendanceChanged(
 ): void {
   if (!ioInstance) return;
 
-  const uniqueUserIds = Array.from(new Set(userIds));
-  for (const userId of uniqueUserIds) {
+  for (const userId of new Set(userIds)) {
     ioInstance.to(`user:${userId}`).emit("attendance:changed", payload);
   }
 }

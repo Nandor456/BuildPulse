@@ -33,12 +33,12 @@ export type AttendanceSummary = {
 
 export type ScanResult =
   | {
-      event: "CHECK_IN";
-      workPointId: string;
-      workPointName: string;
-      date: Date;
-      checkedInAt: Date;
-    }
+    event: "CHECK_IN";
+    workPointId: string;
+    workPointName: string;
+    date: Date;
+    checkedInAt: Date;
+  }
   | CompletedScanResult;
 
 export type CompletedScanResult = {
@@ -75,19 +75,16 @@ export type MonthlySummary = {
 
 const GEOFENCE_RADIUS_METERS = 100;
 const EARTH_RADIUS_METERS = 6_371_000;
+const QUARTER_HOUR_MS = 15 * 60 * 1000;
 
 type Coordinates = {
   lat: number;
   lng: number;
 };
 
-function computeHours(checkedInAt: Date, checkedOutAt: Date): number {
-  const ms = checkedOutAt.getTime() - checkedInAt.getTime();
-  return Math.max(0, ms / (1000 * 60 * 60));
-}
-
-function computeBillableHours(checkedInAt: Date, checkedOutAt: Date): number {
-  return Math.ceil(computeHours(checkedInAt, checkedOutAt));
+export function computeBillableHours(checkedInAt: Date, checkedOutAt: Date): number {
+  const ms = Math.max(0, checkedOutAt.getTime() - checkedInAt.getTime());
+  return Math.round(ms / QUARTER_HOUR_MS) / 4;
 }
 
 function toRadians(value: number): number {
@@ -454,6 +451,64 @@ export async function setCheckoutTime(
   });
 }
 
+export async function updateAttendanceTimes(params: {
+  attendanceId: string;
+  checkedInAt: Date;
+  checkedOutAt: Date | null;
+}): Promise<AttendanceRecord> {
+  const record = await prisma.attendance.findUnique({
+    where: { id: params.attendanceId },
+    select: { id: true },
+  });
+
+  if (!record) {
+    const err = new Error("Attendance record not found");
+    (err as NodeJS.ErrnoException).code = "NOT_FOUND";
+    throw err;
+  }
+
+  if (params.checkedOutAt && params.checkedOutAt <= params.checkedInAt) {
+    const err = new Error("Check-out time must be after check-in time");
+    (err as NodeJS.ErrnoException).code = "INVALID";
+    throw err;
+  }
+
+  try {
+    return await prisma.attendance.update({
+      where: { id: params.attendanceId },
+      data: {
+        date: dateInZone(params.checkedInAt),
+        checkedInAt: params.checkedInAt,
+        checkedOutAt: params.checkedOutAt ?? null,
+        checkoutSource: params.checkedOutAt ? "MANUAL" : null,
+      },
+      select: {
+        id: true,
+        workerId: true,
+        workPointId: true,
+        date: true,
+        checkedInAt: true,
+        checkedOutAt: true,
+        checkoutSource: true,
+        source: true,
+        worker: { select: { id: true, username: true, email: true } },
+      },
+    });
+  } catch (err: unknown) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      (err as { code: string }).code === "P2002"
+    ) {
+      const conflict = new Error("Attendance already exists for this day");
+      (conflict as NodeJS.ErrnoException).code = "DUPLICATE";
+      throw conflict;
+    }
+    throw err;
+  }
+}
+
 export async function removeAttendance(
   id: string,
 ): Promise<{ id: string; workPointId: string; workerId: string }> {
@@ -478,12 +533,12 @@ export async function getAttendanceObserverUserIds(
     }),
   ]);
 
-  const ids = new Set<string>();
-  operators.forEach((operator) => ids.add(operator.id));
-  workPoint?.workers.forEach((worker) => ids.add(worker.id));
-  if (workerId) ids.add(workerId);
+  const userIds = new Set<string>();
+  operators.forEach((operator) => userIds.add(operator.id));
+  workPoint?.workers.forEach((worker) => userIds.add(worker.id));
+  if (workerId) userIds.add(workerId);
 
-  return Array.from(ids);
+  return Array.from(userIds);
 }
 
 export async function getQrForWorkPoint(params: {

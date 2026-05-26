@@ -7,19 +7,20 @@ This is a concise, implementation-accurate guide for the backend so agents do no
 
 - Base path: `/api`
 - Auth: JWT cookie auth with short-lived access cookies and rotating refresh tokens
-- Role-based access: invitations and worker account edits are `ADMIN`-only; workpoint, worker assignment, and workpoint attendance admin routes allow `ADMIN` and `LEADER`
+- Role-based access: invitations, workpoint, worker assignment, worker account edits, and workpoint attendance operator routes allow `ADMIN` and `LEADER`; attendance time edit routes are `ADMIN`-only
 - Real-time: Socket.IO with JWT auth and chat events
-- File uploads: `/uploads` static (messaging attachments)
+- File uploads: `/uploads/messaging` is static for messaging attachments; worker documents are stored under `private/worker-documents` and streamed through authenticated `/api/worker-documents/:documentId/file`
 
 ## Runtime and environment
 
 - Env loading: `NODE_ENV=development` loads `.env.development`; `NODE_ENV=production` loads `.env.production`; `.env` is a shared fallback if present
 - Required env: `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, plus either `DATABASE_URL` or the `DB_*` variables needed to build it
 - Production should set `FRONTEND_BASE_URL`, `APP_BASE_URL`, and `CORS_ALLOWED_ORIGINS`
-- Optional env: `PORT` (default 4000), `ATTENDANCE_TIMEZONE`, `AUTH_COOKIE_SAME_SITE`, SMTP vars for mail
+- Optional env: `PORT` (default 4000), `ATTENDANCE_TIMEZONE`, `AUTH_COOKIE_SAME_SITE`, `FIREBASE_SERVICE_ACCOUNT_JSON`, SMTP vars for mail
 - CORS uses `CORS_ALLOWED_ORIGINS`/`FRONTEND_BASE_URL` and still allows localhost origins outside production
 - If the frontend calls the API from a different site in production, set `AUTH_COOKIE_SAME_SITE=none` so auth cookies can be sent cross-site
 - Refresh tokens are stored hashed in Postgres
+- Mobile message push notifications use Firebase Admin SDK when `FIREBASE_SERVICE_ACCOUNT_JSON` is set; without it, push sending is skipped
 
 ## Errors and validation
 
@@ -45,7 +46,7 @@ This is a concise, implementation-accurate guide for the backend so agents do no
 `POST /api/auth/logout`
 - Revokes the active refresh token when possible and clears auth cookies.
 
-## Invitation routes (ADMIN)
+## Invitation routes (ADMIN/LEADER)
 
 `GET /api/invitations`
 - Returns `{ invitations: InvitationDTO[] }`
@@ -72,7 +73,7 @@ User routes:
 `GET /api/attendance/me/daily?year=YYYY&month=M`
 `GET /api/attendance/me/monthly?year=YYYY&month=M`
 
-Admin routes:
+Admin/leader routes:
 
 `GET /api/attendance/workpoint/:id?from=YYYY-MM-DD&to=YYYY-MM-DD`
 - Returns list of attendance records.
@@ -80,8 +81,11 @@ Admin routes:
 `POST /api/attendance/workpoint/:id/manual`
 - Body: `{ workerId, date: "YYYY-MM-DD", checkedInAt?, checkedOutAt? }`
 
-`PATCH /api/attendance/:id/checkout`
+`PATCH /api/attendance/:id/checkout` (ADMIN)
 - Body: `{ checkedOutAt: ISO datetime }`
+
+`PATCH /api/attendance/:id/times` (ADMIN)
+- Body: `{ checkedInAt: ISO datetime, checkedOutAt: ISO datetime | null }`
 
 `DELETE /api/attendance/:id`
 
@@ -139,6 +143,16 @@ Worker assignment routes:
 
 `GET /api/messaging/users`
 - Lists other users for chat creation.
+
+## Push notification routes (authenticated)
+
+`POST /api/push/devices`
+- Body: `{ token, platform }` where `platform` is `ios` or `android`
+- Upserts the current user's FCM device token.
+
+`DELETE /api/push/devices`
+- Body: `{ token }`
+- Removes the current user's FCM device token.
 
 ## Socket.IO events
 

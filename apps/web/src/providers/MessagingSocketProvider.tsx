@@ -147,8 +147,12 @@ export function MessagingSocketProvider({ children }: { children: ReactNode }) {
             attendanceId?: string;
             changedAt: string;
         }) => {
-            void qc.invalidateQueries({ queryKey: QUERY_KEYS.attendance.byWorkPoint(workPointId) });
-            void qc.invalidateQueries({ queryKey: QUERY_KEYS.workPoints.detail(workPointId) });
+            void qc.invalidateQueries({
+                queryKey: QUERY_KEYS.attendance.byWorkPoint(workPointId),
+            });
+            void qc.invalidateQueries({
+                queryKey: QUERY_KEYS.workPoints.detail(workPointId),
+            });
             void qc.invalidateQueries({ queryKey: QUERY_KEYS.workPoints.all });
 
             if (!workerId || workerId === user?.id) {

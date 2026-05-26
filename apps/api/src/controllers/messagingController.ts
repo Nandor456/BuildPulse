@@ -9,6 +9,7 @@ import {
   listAllUsers,
 } from "../services/messagingService.js";
 import { emitChatChanged } from "../realtime/socketServer.js";
+import { notifyMessageRecipients } fßrom "../services/pushNotificationService.js";
 
 export async function listChatsController(
   req: AuthenticatedRequest,
@@ -88,6 +89,9 @@ export async function sendMessageController(
     });
 
     res.status(201).json(message);
+    void notifyMessageRecipients(message).catch((error) => {
+      console.error("[push] message notification error:", error);
+    });
   } catch (err) {
     next(err);
   }

@@ -107,6 +107,8 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Location is still blocked by the browser or device. Allow location for this site and for the browser app, then scan the QR code again.":
       "Locatia este inca blocata de browser sau dispozitiv. Permite locatia pentru acest site si pentru aplicatia browserului, apoi scaneaza din nou codul QR.",
     "Location required": "Locatie necesara",
+    "Are you sure you want to log out?":
+      "Esti sigur ca vrei sa te deconectezi?",
     "Log out": "Deconectare",
     "Login failed": "Autentificarea a esuat",
     "Messages": "Mesaje",
@@ -325,6 +327,8 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Location is still blocked by the browser or device. Allow location for this site and for the browser app, then scan the QR code again.":
       "A helyadatot meg mindig blokkolja a bongeszo vagy az eszkoz. Engedelyezd a helyhozzaferest ehhez a webhelyhez es a bongeszo alkalmazashoz, majd szkenneld be ujra a QR-kodot.",
     "Location required": "Helyadat szukseges",
+    "Are you sure you want to log out?":
+      "Biztosan ki szeretnel jelentkezni?",
     "Log out": "Kijelentkezes",
     "Login failed": "A belepes sikertelen",
     "Messages": "Uzenetek",
