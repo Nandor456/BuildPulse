@@ -9,7 +9,7 @@ import {
   listAllUsers,
 } from "../services/messagingService.js";
 import { emitChatChanged } from "../realtime/socketServer.js";
-import { notifyMessageRecipients } fßrom "../services/pushNotificationService.js";
+import { notifyMessageRecipients } from "../services/pushNotificationService.js";
 
 export async function listChatsController(
   req: AuthenticatedRequest,
