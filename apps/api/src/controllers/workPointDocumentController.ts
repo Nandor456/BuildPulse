@@ -62,6 +62,7 @@ export async function uploadWorkPointDocumentController(
     const document = await createWorkPointDocument({
       workPointId: id,
       uploadedById: req.auth!.userId,
+      companyId: req.auth!.companyId,
       file,
     });
     res.status(201).json({ document });
@@ -79,7 +80,7 @@ export async function deleteWorkPointDocumentController(
   const { documentId } = req.params;
 
   try {
-    await deleteWorkPointDocument(documentId);
+    await deleteWorkPointDocument(documentId, req.auth!.companyId);
     res.status(204).send();
   } catch (error) {
     res

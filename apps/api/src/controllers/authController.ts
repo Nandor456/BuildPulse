@@ -1,5 +1,9 @@
 import type { Request, Response } from "express";
-import { register, validateCredentials } from "../services/authService.js";
+import {
+  register,
+  RegistrationError,
+  validateCredentials,
+} from "../services/authService.js";
 import { log } from "node:console";
 import { getUserById } from "../services/userService.js";
 import type { AuthenticatedRequest } from "../types/AuthRequest.js";
@@ -13,19 +17,21 @@ import {
 } from "../services/authTokenService.js";
 
 export async function registerController(req: Request, res: Response) {
-  const { username, email, password, token } = req.body as {
+  const { username, email, password, companyName, token } = req.body as {
     username: string;
     email: string;
     password: string;
+    companyName?: string;
     token?: string;
   };
   try {
-    const user = await register(username, email, password, token);
+    const user = await register(username, email, password, companyName, token);
     await issueAuthCookies(res, user.id);
     res.status(201).json({ id: user.id });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Registration failed";
-    res.status(400).json({ error: message });
+    const status = err instanceof RegistrationError ? err.statusCode : 400;
+    res.status(status).json({ error: message });
   }
 }
 

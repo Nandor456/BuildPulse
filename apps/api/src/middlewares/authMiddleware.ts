@@ -20,7 +20,28 @@ export async function ensureAuthenticated(
 
   try {
     const verified = await verifyAccessToken(token);
-    req.auth = { userId: verified.userId, tokenId: verified.jti };
+    const user = await prisma.user.findUnique({
+      where: { id: verified.userId },
+      select: {
+        id: true,
+        role: true,
+        companyId: true,
+        company: { select: { billingStatus: true } },
+      },
+    });
+
+    if (!user) {
+      log("Unauthorized access attempt. User no longer exists.");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    req.auth = {
+      userId: verified.userId,
+      role: user.role,
+      companyId: user.companyId,
+      companyBillingStatus: user.company.billingStatus,
+      tokenId: verified.jti,
+    };
     next();
   } catch (error) {
     if (error instanceof AuthTokenError) {
@@ -32,12 +53,11 @@ export async function ensureAuthenticated(
 }
 
 export function ensureRole(...allowedRoles: string[]) {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.auth?.userId;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  return (req: Request, res: Response, next: NextFunction) => {
+    const role = req.auth?.role;
+    if (!role) return res.status(401).json({ error: "Unauthorized" });
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !allowedRoles.includes(user.role)) {
+    if (!allowedRoles.includes(role)) {
       return res.status(403).json({ error: "Forbidden" });
     }
     next();

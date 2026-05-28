@@ -8,6 +8,12 @@ type User = {
   username: string;
   email: string;
   role: UserRole;
+  companyId: string;
+  company: {
+    id: string;
+    name: string;
+    billingStatus: string;
+  };
 };
 
 export type { User, UserRole };

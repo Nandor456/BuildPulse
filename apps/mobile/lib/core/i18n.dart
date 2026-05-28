@@ -115,6 +115,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Allow location access to scan attendance.':
         'Allow location access to scan attendance.',
     'Ask an admin to set your wage': 'Ask an admin to set your wage',
+    'Ask your company administrator for an invitation.':
+        'Ask your company administrator for an invitation.',
     'Attendance': 'Attendance',
     'Attendance scan': 'Attendance scan',
     'Attendance, hours, assigned workpoints, and wage-based earnings.':
@@ -128,6 +130,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Choose deadline': 'Choose deadline',
     'Cancel': 'Cancel',
     'Completed attendances': 'Completed attendances',
+    'Company name': 'Company name',
+    'Company name is required.': 'Company name is required.',
     'Confirm': 'Confirm',
     'Coordinates are generated automatically from the address.':
         'Coordinates are generated automatically from the address.',
@@ -233,6 +237,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Open records': 'Open records',
     'Open theme': 'Open theme',
     'PDF': 'PDF',
+    'Paid registration is not available yet.':
+        'Paid registration is not available yet.',
     'PENDING': 'Pending',
     'Pending': 'Pending',
     'Password': 'Password',
@@ -251,6 +257,9 @@ final Map<AppLanguage, Map<String, String>> _messages = {
         'Preview is not available for this file.',
     'Refresh': 'Refresh',
     'Register': 'Register',
+    'Registration is invite-only': 'Registration is invite-only',
+    'Registration is invite-only until payment is available.':
+        'Registration is invite-only until payment is available.',
     'Registration failed': 'Registration failed',
     'Username already taken': 'Username already taken',
     'Username must be at most 50 characters.':
@@ -294,6 +303,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Upload': 'Upload',
     'Uploading...': 'Uploading...',
     'Uploaded {date}': 'Uploaded {date}',
+    'Use an invitation link from your company administrator to create an account.':
+        'Use an invitation link from your company administrator to create an account.',
     'Use the form above to invite your first user.':
         'Use the form above to invite your first user.',
     'User Invitations': 'User Invitations',
@@ -535,6 +546,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
         'Permite accesul la locație pentru a înregistra prezența.',
     'Ask an admin to set your wage':
         'Cere unui administrator să îți seteze salariul',
+    'Ask your company administrator for an invitation.':
+        'Cere administratorului companiei o invitație.',
     'Attendance': 'Prezență',
     'Attendance scan': 'Scanare prezență',
     'Attendance, hours, assigned workpoints, and wage-based earnings.':
@@ -548,6 +561,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Choose deadline': 'Alege termenul-limită',
     'Cancel': 'Anulează',
     'Completed attendances': 'Prezențe finalizate',
+    'Company name': 'Numele companiei',
+    'Company name is required.': 'Numele companiei este obligatoriu.',
     'Confirm': 'Confirmă',
     'Coordinates are generated automatically from the address.':
         'Coordonatele sunt generate automat din adresă.',
@@ -656,6 +671,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Open records': 'Înregistrări deschise',
     'Open theme': 'Deschide tema',
     'PDF': 'PDF',
+    'Paid registration is not available yet.':
+        'Înregistrarea plătită nu este disponibilă încă.',
     'PENDING': 'În așteptare',
     'Pending': 'În așteptare',
     'Password': 'Parolă',
@@ -674,6 +691,10 @@ final Map<AppLanguage, Map<String, String>> _messages = {
         'Previzualizarea nu este disponibilă pentru acest fișier.',
     'Refresh': 'Reîncarcă',
     'Register': 'Înregistrare',
+    'Registration is invite-only':
+        'Înregistrarea este doar pe bază de invitație',
+    'Registration is invite-only until payment is available.':
+        'Înregistrarea este doar pe bază de invitație până când plata este disponibilă.',
     'Registration failed': 'Înregistrarea a eșuat',
     'Username already taken': 'Numele de utilizator este deja folosit.',
     'Username must be at most 50 characters.':
@@ -719,6 +740,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Upload': 'Încarcă',
     'Uploading...': 'Se încarcă...',
     'Uploaded {date}': 'Încărcat la {date}',
+    'Use an invitation link from your company administrator to create an account.':
+        'Folosește un link de invitație de la administratorul companiei pentru a crea un cont.',
     'Use the form above to invite your first user.':
         'Folosește formularul de mai sus pentru a invita primul utilizator.',
     'User Invitations': 'Invitații utilizatori',
@@ -968,6 +991,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
         'Engedélyezd a helyhozzáférést a jelenlét rögzítéséhez.',
     'Ask an admin to set your wage':
         'Kérj meg egy adminisztrátort, hogy állítsa be a béredet',
+    'Ask your company administrator for an invitation.':
+        'Kérj meghívót a céges adminisztrátortól.',
     'Attendance': 'Jelenlét',
     'Attendance scan': 'Jelenlét szkennelése',
     'Attendance, hours, assigned workpoints, and wage-based earnings.':
@@ -981,6 +1006,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Choose deadline': 'Határidő kiválasztása',
     'Cancel': 'Mégse',
     'Completed attendances': 'Lezárt jelenlétek',
+    'Company name': 'Cég neve',
+    'Company name is required.': 'A cég neve kötelező.',
     'Confirm': 'Megerősít',
     'Coordinates are generated automatically from the address.':
         'A koordináták automatikusan készülnek a címből.',
@@ -1086,6 +1113,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Open records': 'Nyitott bejegyzések',
     'Open theme': 'Téma megnyitása',
     'PDF': 'PDF',
+    'Paid registration is not available yet.':
+        'A fizetős regisztráció még nem érhető el.',
     'PENDING': 'Függőben',
     'Pending': 'Függőben',
     'Password': 'Jelszó',
@@ -1105,6 +1134,9 @@ final Map<AppLanguage, Map<String, String>> _messages = {
         'Ehhez a fájlhoz nem érhető el előnézet.',
     'Refresh': 'Frissítés',
     'Register': 'Regisztráció',
+    'Registration is invite-only': 'A regisztráció csak meghívóval érhető el',
+    'Registration is invite-only until payment is available.':
+        'A regisztráció a fizetés elérhetőségéig csak meghívóval működik.',
     'Registration failed': 'A regisztráció sikertelen',
     'Username already taken': 'Ez a felhasználónév már foglalt.',
     'Username must be at most 50 characters.':
@@ -1149,6 +1181,8 @@ final Map<AppLanguage, Map<String, String>> _messages = {
     'Upload': 'Feltöltés',
     'Uploading...': 'Feltöltés...',
     'Uploaded {date}': 'Feltöltve: {date}',
+    'Use an invitation link from your company administrator to create an account.':
+        'Fiók létrehozásához használj a céges adminisztrátortól kapott meghívó linket.',
     'Use the form above to invite your first user.':
         'A fenti űrlappal hívhatod meg az első felhasználót.',
     'User Invitations': 'Felhasználói meghívók',

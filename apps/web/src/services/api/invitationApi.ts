@@ -8,6 +8,7 @@ export interface Invitation {
   id: string;
   email: string;
   role: InvitationRole;
+  companyId: string;
   status: InvitationStatus;
   expiresAt: string;
   acceptedAt: string | null;

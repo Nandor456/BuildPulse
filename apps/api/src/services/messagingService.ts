@@ -37,9 +37,12 @@ export type ChatListItem = {
   otherUserId?: string;
 };
 
-export async function listChatsForUser(userId: string): Promise<ChatListItem[]> {
+export async function listChatsForUser(
+  userId: string,
+  companyId: string,
+): Promise<ChatListItem[]> {
   const participants = await prisma.chatParticipant.findMany({
-    where: { userId },
+    where: { userId, chat: { companyId } },
     include: {
       chat: {
         include: {
@@ -148,13 +151,21 @@ export async function getChatMessages(
 
 export async function findOrCreateDirectChat(
   userId: string,
-  otherUserId: string
+  otherUserId: string,
+  companyId: string,
 ): Promise<{ id: string; isNew: boolean }> {
   if (userId === otherUserId) throw new Error("Cannot chat with yourself");
+
+  const otherUser = await prisma.user.findFirst({
+    where: { id: otherUserId, companyId },
+    select: { id: true },
+  });
+  if (!otherUser) throw new Error("User not found");
 
   // Find existing direct chat between these two users
   const existing = await prisma.chat.findFirst({
     where: {
+      companyId,
       type: "DIRECT",
       participants: {
         every: { userId: { in: [userId, otherUserId] } },
@@ -171,6 +182,7 @@ export async function findOrCreateDirectChat(
 
   const chat = await prisma.chat.create({
     data: {
+      companyId,
       type: "DIRECT",
       participants: {
         create: [{ userId }, { userId: otherUserId }],
@@ -248,11 +260,16 @@ export async function getOrCreateWorkPointChat(
 
   const workPoint = await prisma.workPoint.findUnique({
     where: { id: workPointId },
-    select: { name: true },
+    select: { companyId: true, name: true },
   });
+
+  if (!workPoint) {
+    throw new Error("Work point not found");
+  }
 
   const chat = await prisma.chat.create({
     data: {
+      companyId: workPoint.companyId,
       type: "WORKPOINT",
       workPointId,
       name: workPoint?.name ?? "Work Point Chat",
@@ -310,9 +327,9 @@ export async function getUserChatIds(userId: string): Promise<string[]> {
   return participants.map((p) => p.chatId);
 }
 
-export async function listAllUsers(excludeUserId: string) {
+export async function listAllUsers(excludeUserId: string, companyId: string) {
   return prisma.user.findMany({
-    where: { id: { not: excludeUserId } },
+    where: { companyId, id: { not: excludeUserId } },
     select: { id: true, username: true, email: true, role: true },
     orderBy: { username: "asc" },
   });

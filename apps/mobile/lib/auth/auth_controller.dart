@@ -57,12 +57,14 @@ class AuthController extends ChangeNotifier {
     required String username,
     required String email,
     required String password,
+    String? companyName,
     String? token,
   }) async {
     await _api.register(
       username: username,
       email: email,
       password: password,
+      companyName: companyName,
       token: token,
     );
     await refreshUser();

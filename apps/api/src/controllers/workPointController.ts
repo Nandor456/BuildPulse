@@ -35,11 +35,11 @@ function notifyWorkPointChatChanged(workPointId: string) {
 }
 
 export async function listWorkPointsController(
-  _req: AuthenticatedRequest,
+  req: AuthenticatedRequest,
   res: Response,
 ) {
   try {
-    const workPoints = await listWorkPoints();
+    const workPoints = await listWorkPoints(req.auth!.companyId);
     res.json({ workPoints });
   } catch (error) {
     res.status(500).json({
@@ -53,7 +53,10 @@ export async function listMyAssignedWorkPointsController(
   res: Response,
 ) {
   try {
-    const workPoints = await listMyAssignedWorkPoints(req.auth!.userId);
+    const workPoints = await listMyAssignedWorkPoints(
+      req.auth!.userId,
+      req.auth!.companyId,
+    );
     res.json({ workPoints });
   } catch (error) {
     res.status(500).json({
@@ -69,7 +72,7 @@ export async function getWorkPointController(
   const { id } = req.params;
 
   try {
-    const workPoint = await getWorkPointById(id);
+    const workPoint = await getWorkPointById(id, req.auth!.companyId);
     if (!workPoint) {
       return res.status(404).json({ error: "Work point not found" });
     }
@@ -90,6 +93,7 @@ export async function createWorkPointController(
     const workPoint = await createWorkPoint(
       req.body as WorkPointInput,
       req.auth!.userId,
+      req.auth!.companyId,
     );
     notifyWorkPointChatChanged(workPoint.id);
     res.status(201).json({ workPoint });
@@ -107,7 +111,11 @@ export async function updateWorkPointController(
   const { id } = req.params;
 
   try {
-    const workPoint = await updateWorkPoint(id, req.body as UpdateWorkPointInput);
+    const workPoint = await updateWorkPoint(
+      id,
+      req.auth!.companyId,
+      req.body as UpdateWorkPointInput,
+    );
     res.json({ workPoint });
   } catch (error) {
     res.status(statusForError(error)).json({
@@ -123,7 +131,7 @@ export async function deleteWorkPointController(
   const { id } = req.params;
 
   try {
-    await deleteWorkPoint(id);
+    await deleteWorkPoint(id, req.auth!.companyId);
     res.status(204).send();
   } catch (error) {
     res.status(statusForError(error)).json({

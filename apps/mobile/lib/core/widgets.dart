@@ -19,8 +19,9 @@ String errorMessage(Object error, [String fallback = 'Something went wrong.']) {
                 message != null && message.toString().trim().isNotEmpty,
             orElse: () => null,
           );
-          if (firstFormError != null)
+          if (firstFormError != null) {
             return translate(firstFormError.toString());
+          }
         }
 
         final fieldErrors = errors['fieldErrors'];

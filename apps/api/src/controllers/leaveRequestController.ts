@@ -70,11 +70,11 @@ function sendLeaveRequestError(res: Response, error: unknown): void {
 }
 
 export async function listAllLeaveRequestsController(
-  _req: AuthenticatedRequest,
+  req: AuthenticatedRequest,
   res: Response,
 ): Promise<void> {
   try {
-    const leaveRequests = await listAllLeaveRequests();
+    const leaveRequests = await listAllLeaveRequests(req.auth!.companyId);
     res.json({ leaveRequests });
   } catch (error) {
     console.error("listAllLeaveRequestsController error:", error);
@@ -108,6 +108,7 @@ export async function createLeaveRequestController(
   try {
     const leaveRequest = await createLeaveRequest({
       userId: req.auth!.userId,
+      companyId: req.auth!.companyId,
       type: body.type,
       startDate: body.startDate,
       endDate: body.endDate,
@@ -127,6 +128,7 @@ export async function approveLeaveRequestController(
     const leaveRequest = await approveLeaveRequest({
       requestId: req.params.id,
       reviewerId: req.auth!.userId,
+      companyId: req.auth!.companyId,
     });
     notifyLeaveRequestChanged("approved", leaveRequest);
     res.json({ leaveRequest });
@@ -143,6 +145,7 @@ export async function rejectLeaveRequestController(
     const leaveRequest = await rejectLeaveRequest({
       requestId: req.params.id,
       reviewerId: req.auth!.userId,
+      companyId: req.auth!.companyId,
     });
     notifyLeaveRequestChanged("rejected", leaveRequest);
     res.json({ leaveRequest });

@@ -356,6 +356,7 @@ export async function recordAttendance(params: {
 
 export async function listAttendance(params: {
   workPointId: string;
+  companyId: string;
   from?: Date;
   to?: Date;
 }): Promise<AttendanceRecord[]> {
@@ -364,6 +365,7 @@ export async function listAttendance(params: {
   return prisma.attendance.findMany({
     where: {
       workPointId: params.workPointId,
+      workPoint: { companyId: params.companyId },
       ...(params.from || params.to
         ? {
           date: {
@@ -391,10 +393,27 @@ export async function listAttendance(params: {
 export async function manualMark(params: {
   workerId: string;
   workPointId: string;
+  companyId: string;
   date: Date;
   checkedInAt?: Date;
   checkedOutAt?: Date;
 }): Promise<AttendanceRecord> {
+  const [worker, workPoint] = await Promise.all([
+    prisma.user.findFirst({
+      where: { id: params.workerId, companyId: params.companyId },
+      select: { id: true },
+    }),
+    prisma.workPoint.findFirst({
+      where: { id: params.workPointId, companyId: params.companyId },
+      select: { id: true },
+    }),
+  ]);
+  if (!worker || !workPoint) {
+    const err = new Error("Worker or workpoint not found");
+    (err as NodeJS.ErrnoException).code = "NOT_FOUND";
+    throw err;
+  }
+
   const checkedInAt = params.checkedInAt ?? new Date();
   if (params.checkedOutAt && params.checkedOutAt <= checkedInAt) {
     const err = new Error("Check-out time must be after check-in time");
@@ -443,14 +462,15 @@ export async function manualMark(params: {
 
 export async function setCheckoutTime(
   attendanceId: string,
+  companyId: string,
   checkedOutAt: Date,
 ): Promise<AttendanceRecord> {
   const record = await prisma.attendance.findUnique({
     where: { id: attendanceId },
-    select: { checkedInAt: true },
+    select: { checkedInAt: true, workPoint: { select: { companyId: true } } },
   });
 
-  if (!record) {
+  if (!record || record.workPoint.companyId !== companyId) {
     const err = new Error("Attendance record not found");
     (err as NodeJS.ErrnoException).code = "NOT_FOUND";
     throw err;
@@ -481,15 +501,16 @@ export async function setCheckoutTime(
 
 export async function updateAttendanceTimes(params: {
   attendanceId: string;
+  companyId: string;
   checkedInAt: Date;
   checkedOutAt: Date | null;
 }): Promise<AttendanceRecord> {
   const record = await prisma.attendance.findUnique({
     where: { id: params.attendanceId },
-    select: { id: true },
+    select: { id: true, workPoint: { select: { companyId: true } } },
   });
 
-  if (!record) {
+  if (!record || record.workPoint.companyId !== params.companyId) {
     const err = new Error("Attendance record not found");
     (err as NodeJS.ErrnoException).code = "NOT_FOUND";
     throw err;
@@ -539,7 +560,18 @@ export async function updateAttendanceTimes(params: {
 
 export async function removeAttendance(
   id: string,
+  companyId: string,
 ): Promise<{ id: string; workPointId: string; workerId: string }> {
+  const record = await prisma.attendance.findUnique({
+    where: { id },
+    select: { id: true, workPoint: { select: { companyId: true } } },
+  });
+  if (!record || record.workPoint.companyId !== companyId) {
+    const err = new Error("Attendance record not found");
+    (err as NodeJS.ErrnoException).code = "NOT_FOUND";
+    throw err;
+  }
+
   return prisma.attendance.delete({
     where: { id },
     select: { id: true, workPointId: true, workerId: true },
@@ -550,16 +582,16 @@ export async function getAttendanceObserverUserIds(
   workPointId: string,
   workerId?: string,
 ): Promise<string[]> {
-  const [operators, workPoint] = await Promise.all([
-    prisma.user.findMany({
-      where: { role: { in: ["ADMIN", "LEADER"] } },
-      select: { id: true },
-    }),
-    prisma.workPoint.findUnique({
-      where: { id: workPointId },
-      select: { workers: { select: { id: true } } },
-    }),
-  ]);
+  const workPoint = await prisma.workPoint.findUnique({
+    where: { id: workPointId },
+    select: { companyId: true, workers: { select: { id: true } } },
+  });
+  if (!workPoint) return workerId ? [workerId] : [];
+
+  const operators = await prisma.user.findMany({
+    where: { companyId: workPoint.companyId, role: { in: ["ADMIN", "LEADER"] } },
+    select: { id: true },
+  });
 
   const userIds = new Set<string>();
   operators.forEach((operator) => userIds.add(operator.id));
@@ -571,10 +603,11 @@ export async function getAttendanceObserverUserIds(
 
 export async function getQrForWorkPoint(params: {
   workPointId: string;
+  companyId: string;
   frontendBaseUrl: string;
 }): Promise<{ qrToken: string; qrPng: string }> {
-  const workPoint = await prisma.workPoint.findUnique({
-    where: { id: params.workPointId },
+  const workPoint = await prisma.workPoint.findFirst({
+    where: { id: params.workPointId, companyId: params.companyId },
     select: { qrToken: true },
   });
 
@@ -590,13 +623,16 @@ export async function getQrForWorkPoint(params: {
   return { qrToken: workPoint.qrToken, qrPng };
 }
 
-export async function rotateQrToken(workPointId: string): Promise<{
+export async function rotateQrToken(
+  workPointId: string,
+  companyId: string,
+): Promise<{
   qrToken: string;
   qrPng: string;
   frontendBaseUrl: string;
 }> {
-  const workPoint = await prisma.workPoint.findUnique({
-    where: { id: workPointId },
+  const workPoint = await prisma.workPoint.findFirst({
+    where: { id: workPointId, companyId },
     select: { id: true },
   });
   if (!workPoint) {
@@ -616,11 +652,12 @@ export async function rotateQrToken(workPointId: string): Promise<{
 
 export async function getAttendanceSummary(
   workPointId: string,
+  companyId: string,
 ): Promise<AttendanceSummary[]> {
   await autoCloseOpenAttendances();
 
-  const assignedWorkers = await prisma.workPoint.findUnique({
-    where: { id: workPointId },
+  const assignedWorkers = await prisma.workPoint.findFirst({
+    where: { id: workPointId, companyId },
     select: {
       workers: {
         select: {
@@ -636,7 +673,7 @@ export async function getAttendanceSummary(
   if (!assignedWorkers) return [];
 
   const records = await prisma.attendance.findMany({
-    where: { workPointId },
+    where: { workPointId, workPoint: { companyId } },
     select: {
       workerId: true,
       date: true,

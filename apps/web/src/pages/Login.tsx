@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { useI18n } from "@/hooks/useI18n";
 import { translateApiErrorMessage } from "@/lib/apiErrors";
+import {
+  isExternalRequestAccessUrl,
+  REQUEST_ACCESS_URL,
+} from "@/lib/publicLinks";
 import { api } from "@/services/api/axios";
 import { resetUserScopedQueries } from "../services/queryClient";
 import buildPulseLogo from "@/assets/buildpulselogo.png";
@@ -28,6 +32,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasRequestAccessUrl = REQUEST_ACCESS_URL.length > 0;
 
   const canSubmit = useMemo(() => {
     return username.trim().length >= 3 && password.length > 0 && !isSubmitting;
@@ -85,7 +90,7 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="rounded-2xl border bg-card p-6 sm:p-8">
+        <div className="rounded-md border bg-card p-6 sm:p-8">
           <form onSubmit={onSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="login-username">{t("Username")}</Label>
@@ -126,15 +131,21 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          {t("No account?")}{" "}
-          <RouterLink
-            to="/register"
-            className="font-medium text-primary hover:underline"
-          >
-            {t("Register")}
-          </RouterLink>
-        </p>
+        <div className="mt-6 text-center text-sm text-muted-foreground">
+          <span>{t("Need access?")}</span>{" "}
+          {hasRequestAccessUrl ? (
+            <a
+              href={REQUEST_ACCESS_URL}
+              target={isExternalRequestAccessUrl() ? "_blank" : undefined}
+              rel={isExternalRequestAccessUrl() ? "noreferrer" : undefined}
+              className="font-medium text-primary hover:underline"
+            >
+              {t("Request access")}
+            </a>
+          ) : (
+            <span>{t("Ask your company administrator for an invitation.")}</span>
+          )}
+        </div>
       </div>
     </main>
   );

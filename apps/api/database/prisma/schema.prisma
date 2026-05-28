@@ -14,6 +14,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum CompanyBillingStatus {
+  UNPAID
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Company {
+  id                    String               @id @default(uuid())
+  name                  String
+  billingStatus         CompanyBillingStatus @default(UNPAID) @map("billing_status")
+  paymentProvider       String?              @map("payment_provider")
+  paymentCustomerId     String?              @unique @map("payment_customer_id")
+  paymentSubscriptionId String?              @unique @map("payment_subscription_id")
+  paidUntil             DateTime?            @map("paid_until")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+
+  users       User[]
+  workPoints  WorkPoint[]
+  invitations Invitation[]
+  chats       Chat[]
+
+  @@index([billingStatus])
+  @@map("companies")
+}
+
 model User {
   id         String  @id @default(uuid())
   username   String  @unique
@@ -21,7 +49,9 @@ model User {
   password   String
   role       String
   hourlyWage Float?  @map("hourly_wage")
+  companyId  String  @map("company_id")
 
+  company               Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   workPoints            WorkPoint[]
   invitations           Invitation[]     @relation("InvitedBy")
   assignedWorkPoints    WorkPoint[]      @relation("WorkPointWorkers")
@@ -35,6 +65,8 @@ model User {
   pushDevices           PushDevice[]
   leaveRequests         LeaveRequest[]   @relation("LeaveRequestUser")
   reviewedLeaveRequests LeaveRequest[]   @relation("LeaveRequestReviewer")
+
+  @@index([companyId])
 }
 
 model WorkPoint {
@@ -48,11 +80,15 @@ model WorkPoint {
   uploadedAt  DateTime      @default(now())
   deadline    DateTime?
   qrToken     String        @unique @default(uuid()) @map("qr_token")
+  companyId   String        @map("company_id")
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user        User?         @relation(fields: [userId], references: [id])
   workers               User[]     @relation("WorkPointWorkers")
   attendances           Attendance[]
   documents             WorkPointDocument[]
   chat                  Chat?
+
+  @@index([companyId])
 }
 
 model Invitation {
@@ -61,14 +97,17 @@ model Invitation {
   role        String
   token       String    @unique
   invitedById String?   @map("invited_by_id")
+  companyId   String    @map("company_id")
   expiresAt   DateTime  @map("expires_at")
   acceptedAt  DateTime? @map("accepted_at")
   revokedAt   DateTime? @map("revoked_at")
   createdAt   DateTime  @default(now()) @map("created_at")
 
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   invitedBy   User?     @relation("InvitedBy", fields: [invitedById], references: [id])
 
-  @@index([email])
+  @@index([companyId])
+  @@index([companyId, email])
   @@map("invitations")
 }
 
@@ -201,14 +240,17 @@ model Chat {
   type          ChatType
   name          String?
   workPointId   String?           @unique @map("work_point_id")
+  companyId     String            @map("company_id")
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
   lastMessageAt DateTime?         @map("last_message_at")
 
+  company       Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
   workPoint     WorkPoint?        @relation(fields: [workPointId], references: [id], onDelete: Cascade)
   participants  ChatParticipant[]
   messages      Message[]
 
+  @@index([companyId])
   @@index([lastMessageAt])
   @@map("chats")
 }

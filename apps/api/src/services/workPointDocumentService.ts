@@ -40,6 +40,7 @@ type WorkPointDocumentRecord = {
 
 type WorkPointDocumentWithAssignment = WorkPointDocumentRecord & {
   workPoint: {
+    companyId: string;
     workers: Array<{ id: string }>;
   };
 };
@@ -112,9 +113,9 @@ async function removeStoredFile(storedName: string) {
   }
 }
 
-async function ensureWorkPointTarget(workPointId: string) {
-  const workPoint = await prisma.workPoint.findUnique({
-    where: { id: workPointId },
+async function ensureWorkPointTarget(workPointId: string, companyId: string) {
+  const workPoint = await prisma.workPoint.findFirst({
+    where: { id: workPointId, companyId },
     select: { id: true },
   });
 
@@ -130,12 +131,13 @@ async function assertCanAccessWorkPointDocuments(params: {
   const [user, workPoint] = await Promise.all([
     prisma.user.findUnique({
       where: { id: params.userId },
-      select: { id: true, role: true },
+      select: { id: true, companyId: true, role: true },
     }),
     prisma.workPoint.findUnique({
       where: { id: params.workPointId },
       select: {
         id: true,
+        companyId: true,
         workers: {
           where: { id: params.userId },
           select: { id: true },
@@ -147,7 +149,7 @@ async function assertCanAccessWorkPointDocuments(params: {
   if (!user) {
     throw new WorkPointDocumentError("Unauthorized", 401);
   }
-  if (!workPoint) {
+  if (!workPoint || workPoint.companyId !== user.companyId) {
     throw new WorkPointDocumentError("Workpoint not found", 404);
   }
   if (user.role === "ADMIN" || user.role === "LEADER") {
@@ -189,10 +191,11 @@ export async function listWorkPointDocuments(params: {
 export async function createWorkPointDocument(params: {
   workPointId: string;
   uploadedById: string;
+  companyId: string;
   file: Express.Multer.File;
 }): Promise<WorkPointDocumentSummary> {
   try {
-    await ensureWorkPointTarget(params.workPointId);
+    await ensureWorkPointTarget(params.workPointId, params.companyId);
 
     const document = await prisma.workPointDocument.create({
       data: {
@@ -213,13 +216,20 @@ export async function createWorkPointDocument(params: {
   }
 }
 
-export async function deleteWorkPointDocument(documentId: string): Promise<void> {
+export async function deleteWorkPointDocument(
+  documentId: string,
+  companyId: string,
+): Promise<void> {
   const document = await prisma.workPointDocument.findUnique({
     where: { id: documentId },
-    select: { id: true, storedName: true },
+    select: {
+      id: true,
+      storedName: true,
+      workPoint: { select: { companyId: true } },
+    },
   });
 
-  if (!document) {
+  if (!document || document.workPoint.companyId !== companyId) {
     throw new WorkPointDocumentError("Document not found", 404);
   }
 
@@ -238,6 +248,7 @@ export async function getWorkPointDocumentFile(params: {
         ...documentSelect,
         workPoint: {
           select: {
+            companyId: true,
             workers: {
               where: { id: params.userId },
               select: { id: true },
@@ -248,15 +259,12 @@ export async function getWorkPointDocumentFile(params: {
     }),
     prisma.user.findUnique({
       where: { id: params.userId },
-      select: { id: true, role: true },
+      select: { id: true, companyId: true, role: true },
     }),
   ]);
 
-  if (!document) {
+  if (!document || !user || document.workPoint.companyId !== user.companyId) {
     throw new WorkPointDocumentError("Document not found", 404);
-  }
-  if (!user) {
-    throw new WorkPointDocumentError("Unauthorized", 401);
   }
   if (!canAccessDocumentFile({ userRole: user.role, document })) {
     throw new WorkPointDocumentError("Forbidden", 403);

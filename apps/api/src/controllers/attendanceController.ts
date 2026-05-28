@@ -116,7 +116,12 @@ export async function listAttendanceController(
   const to = parseDate(req.query.to);
 
   try {
-    const records = await listAttendance({ workPointId, from, to });
+    const records = await listAttendance({
+      workPointId,
+      companyId: req.auth!.companyId,
+      from,
+      to,
+    });
     res.json(records);
   } catch (err) {
     console.error("listAttendanceController error:", err);
@@ -149,6 +154,7 @@ export async function manualMarkController(
     const record = await manualMark({
       workerId,
       workPointId,
+      companyId: req.auth!.companyId,
       date,
       checkedInAt,
       checkedOutAt,
@@ -178,6 +184,15 @@ export async function manualMarkController(
       res.status(400).json({ error: err instanceof Error ? err.message : "Invalid" });
       return;
     }
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      (err as { code: string }).code === "NOT_FOUND"
+    ) {
+      res.status(404).json({ error: err instanceof Error ? err.message : "Not found" });
+      return;
+    }
     console.error("manualMarkController error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -191,7 +206,11 @@ export async function updateCheckoutController(
   const { checkedOutAt: checkedOutAtStr } = req.body as { checkedOutAt: string };
 
   try {
-    const record = await setCheckoutTime(id, new Date(checkedOutAtStr));
+    const record = await setCheckoutTime(
+      id,
+      req.auth!.companyId,
+      new Date(checkedOutAtStr),
+    );
     notifyAttendanceChanged({
       workPointId: record.workPointId,
       workerId: record.workerId,
@@ -231,6 +250,7 @@ export async function updateAttendanceTimesController(
   try {
     const record = await updateAttendanceTimes({
       attendanceId: id,
+      companyId: req.auth!.companyId,
       checkedInAt: new Date(checkedInAtStr),
       checkedOutAt: checkedOutAtStr ? new Date(checkedOutAtStr) : null,
     });
@@ -267,7 +287,7 @@ export async function deleteAttendanceController(
 ): Promise<void> {
   const { id } = req.params;
   try {
-    const record = await removeAttendance(id);
+    const record = await removeAttendance(id, req.auth!.companyId);
     notifyAttendanceChanged({
       workPointId: record.workPointId,
       workerId: record.workerId,
@@ -275,6 +295,15 @@ export async function deleteAttendanceController(
     });
     res.json({ message: "Deleted" });
   } catch (err) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      (err as { code: string }).code === "NOT_FOUND"
+    ) {
+      res.status(404).json({ error: "Attendance record not found" });
+      return;
+    }
     console.error("deleteAttendanceController error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -288,6 +317,7 @@ export async function getQrController(
   try {
     const result = await getQrForWorkPoint({
       workPointId,
+      companyId: req.auth!.companyId,
       frontendBaseUrl: getFrontendBaseUrl(req),
     });
     res.json(result);
@@ -312,9 +342,13 @@ export async function rotateQrController(
 ): Promise<void> {
   const workPointId = req.params.id;
   try {
-    const { qrToken } = await rotateQrToken(workPointId);
+    const { qrToken } = await rotateQrToken(workPointId, req.auth!.companyId);
     const frontendBaseUrl = getFrontendBaseUrl(req);
-    const result = await getQrForWorkPoint({ workPointId, frontendBaseUrl });
+    const result = await getQrForWorkPoint({
+      workPointId,
+      companyId: req.auth!.companyId,
+      frontendBaseUrl,
+    });
     res.json({ qrToken, qrPng: result.qrPng });
   } catch (err: unknown) {
     if (
@@ -373,8 +407,8 @@ export async function exportAttendanceController(
 
   try {
     const [records, summary] = await Promise.all([
-      listAttendance({ workPointId, from, to }),
-      getAttendanceSummary(workPointId),
+      listAttendance({ workPointId, companyId: req.auth!.companyId, from, to }),
+      getAttendanceSummary(workPointId, req.auth!.companyId),
     ]);
 
     const workbook = new ExcelJS.Workbook();

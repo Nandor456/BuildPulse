@@ -132,13 +132,16 @@ function assertValidDateRange(startDate: Date, endDate: Date): void {
   }
 }
 
-async function assertRequesterCanCreate(userId: string): Promise<void> {
+async function assertRequesterCanCreate(
+  userId: string,
+  companyId: string,
+): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true },
+    select: { companyId: true, role: true },
   });
 
-  if (!user) {
+  if (!user || user.companyId !== companyId) {
     throw leaveRequestError("User not found", "NOT_FOUND");
   }
 
@@ -147,13 +150,16 @@ async function assertRequesterCanCreate(userId: string): Promise<void> {
   }
 }
 
-async function assertReviewerCanReview(userId: string): Promise<void> {
+async function assertReviewerCanReview(
+  userId: string,
+  companyId: string,
+): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true },
+    select: { companyId: true, role: true },
   });
 
-  if (!user) {
+  if (!user || user.companyId !== companyId) {
     throw leaveRequestError("User not found", "NOT_FOUND");
   }
 
@@ -192,8 +198,11 @@ async function assertNoActiveOverlap(params: {
   }
 }
 
-export async function listAllLeaveRequests(): Promise<LeaveRequestDTO[]> {
+export async function listAllLeaveRequests(
+  companyId: string,
+): Promise<LeaveRequestDTO[]> {
   const rows = await prisma.leaveRequest.findMany({
+    where: { user: { companyId } },
     include: includeLeaveRequestUsers(),
     orderBy: { createdAt: "desc" },
   });
@@ -216,8 +225,17 @@ export async function listMyLeaveRequests(
 export async function getLeaveRequestObserverUserIds(
   leaveRequestUserId: string,
 ): Promise<string[]> {
+  const requester = await prisma.user.findUnique({
+    where: { id: leaveRequestUserId },
+    select: { companyId: true },
+  });
+  if (!requester) return [];
+
   const managers = await prisma.user.findMany({
-    where: { role: { in: ["ADMIN", "LEADER"] } },
+    where: {
+      companyId: requester.companyId,
+      role: { in: ["ADMIN", "LEADER"] },
+    },
     select: { id: true },
   });
 
@@ -228,11 +246,12 @@ export async function getLeaveRequestObserverUserIds(
 
 export async function createLeaveRequest(params: {
   userId: string;
+  companyId: string;
   type: LeaveRequestType;
   startDate: string;
   endDate: string;
 }): Promise<LeaveRequestDTO> {
-  await assertRequesterCanCreate(params.userId);
+  await assertRequesterCanCreate(params.userId, params.companyId);
 
   const startDate = parseLeaveDateOnly(params.startDate);
   const endDate = parseLeaveDateOnly(params.endDate);
@@ -264,12 +283,13 @@ export async function createLeaveRequest(params: {
 async function reviewLeaveRequest(params: {
   requestId: string;
   reviewerId: string;
+  companyId: string;
   status: "APPROVED" | "REJECTED";
 }): Promise<LeaveRequestDTO> {
-  await assertReviewerCanReview(params.reviewerId);
+  await assertReviewerCanReview(params.reviewerId, params.companyId);
 
-  const request = await prisma.leaveRequest.findUnique({
-    where: { id: params.requestId },
+  const request = await prisma.leaveRequest.findFirst({
+    where: { id: params.requestId, user: { companyId: params.companyId } },
     include: includeLeaveRequestUsers(),
   });
 
@@ -313,6 +333,7 @@ async function reviewLeaveRequest(params: {
 export function approveLeaveRequest(params: {
   requestId: string;
   reviewerId: string;
+  companyId: string;
 }): Promise<LeaveRequestDTO> {
   return reviewLeaveRequest({ ...params, status: "APPROVED" });
 }
@@ -320,6 +341,7 @@ export function approveLeaveRequest(params: {
 export function rejectLeaveRequest(params: {
   requestId: string;
   reviewerId: string;
+  companyId: string;
 }): Promise<LeaveRequestDTO> {
   return reviewLeaveRequest({ ...params, status: "REJECTED" });
 }

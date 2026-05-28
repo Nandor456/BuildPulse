@@ -7,6 +7,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { PublicHeader } from "@/components/public-header";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,10 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { useI18n } from "@/hooks/useI18n";
 import { translateApiErrorMessage } from "@/lib/apiErrors";
+import {
+  isExternalRequestAccessUrl,
+  REQUEST_ACCESS_URL,
+} from "@/lib/publicLinks";
 import { api } from "@/services/api/axios";
 import { resetUserScopedQueries } from "../services/queryClient";
 import buildPulseLogo from "@/assets/buildpulselogo.png";
@@ -33,8 +38,13 @@ export default function Register() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") ?? "";
   const prefilledEmail = searchParams.get("email") ?? "";
+  const isBootstrapMode =
+    searchParams.get("bootstrap") === "1" ||
+    searchParams.get("bootstrap") === "true";
+  const showRegistrationForm = Boolean(token) || isBootstrapMode;
 
   const [username, setUsername] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +69,12 @@ export default function Register() {
       return;
     }
 
+    const trimmedCompanyName = companyName.trim();
+    if (isBootstrapMode && !trimmedCompanyName) {
+      setError(t("Company name is required."));
+      return;
+    }
+
     if (!hasValidPassword) {
       setError(
         t("Password must start with an uppercase letter and be at least 6 characters."),
@@ -72,6 +88,7 @@ export default function Register() {
         username: trimmedUsername,
         email: trimmedEmail,
         password,
+        ...(isBootstrapMode ? { companyName: trimmedCompanyName } : {}),
         ...(token ? { token } : {}),
       });
 
@@ -93,6 +110,10 @@ export default function Register() {
     }
   }
 
+  if (!showRegistrationForm) {
+    return <InviteOnlyRegistrationNotice />;
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md">
@@ -104,14 +125,21 @@ export default function Register() {
           />
           <h1 className="text-center text-xl font-bold">{t("Create your account")}</h1>
           <p className="text-center text-sm text-muted-foreground">
-            {t("Join the Construction ERP system")}
+            {isBootstrapMode
+              ? t("Create the first company administrator")
+              : t("Join the Construction ERP system")}
           </p>
         </div>
 
-        <div className="rounded-2xl border bg-card p-6 sm:p-8">
+        <div className="rounded-md border bg-card p-6 sm:p-8">
           {token && (
             <Alert className="mb-5">
               {t("You're accepting an invitation. Your role will be assigned automatically.")}
+            </Alert>
+          )}
+          {isBootstrapMode && (
+            <Alert className="mb-5">
+              {t("Bootstrap registration only works when it is enabled on the API and no company exists yet.")}
             </Alert>
           )}
           <form onSubmit={onSubmit} className="flex flex-col gap-5">
@@ -127,6 +155,21 @@ export default function Register() {
                 required
               />
             </div>
+
+            {isBootstrapMode && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="register-company">{t("Company name")}</Label>
+                <Input
+                  id="register-company"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  autoComplete="organization"
+                  placeholder={t("Your company")}
+                  maxLength={120}
+                  required
+                />
+              </div>
+            )}
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="register-email">{t("Email address")}</Label>
@@ -188,5 +231,63 @@ export default function Register() {
         </p>
       </div>
     </main>
+  );
+}
+
+function InviteOnlyRegistrationNotice() {
+  const { t } = useI18n();
+  const hasRequestAccessUrl = REQUEST_ACCESS_URL.length > 0;
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <PublicHeader />
+      <main className="flex min-h-[calc(100svh-4rem)] items-center justify-center px-4 py-12">
+        <section className="w-full max-w-lg rounded-md border bg-card p-6 text-center shadow-sm sm:p-8">
+          <img
+            src={buildPulseLogo}
+            alt={t("BuildPulse logo")}
+            className="mx-auto h-20 w-20 rounded-md"
+          />
+          <h1 className="mt-6 text-2xl font-semibold">
+            {t("Registration is invite-only")}
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {t(
+              "New company registration will open after payment is available. For now, use an invitation link or request access.",
+            )}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            {t(
+              "For first-time setup on an empty database, use the bootstrap registration flow.",
+            )}
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button asChild variant="secondary" size="lg">
+              <RouterLink to="/register?bootstrap=1">
+                {t("Create first administrator")}
+              </RouterLink>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <RouterLink to="/login">{t("Login")}</RouterLink>
+            </Button>
+            {hasRequestAccessUrl ? (
+              <Button asChild size="lg">
+                <a
+                  href={REQUEST_ACCESS_URL}
+                  target={isExternalRequestAccessUrl() ? "_blank" : undefined}
+                  rel={isExternalRequestAccessUrl() ? "noreferrer" : undefined}
+                >
+                  {t("Request access")}
+                </a>
+              </Button>
+            ) : (
+              <Button type="button" size="lg" disabled>
+                {t("Request access")}
+              </Button>
+            )}
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }

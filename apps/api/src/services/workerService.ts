@@ -17,9 +17,9 @@ export type WorkerSummary = {
 export type WorkerStats = WorkerSummary;
 
 
-export async function listWorkers(): Promise<WorkerSummary[]> {
+export async function listWorkers(companyId: string): Promise<WorkerSummary[]> {
   const workers = await prisma.user.findMany({
-    where: { role: "WORKER" },
+    where: { companyId, role: "WORKER" },
     select: {
       id: true,
       username: true,
@@ -43,9 +43,10 @@ export async function listWorkers(): Promise<WorkerSummary[]> {
 
 export async function listWorkersForWorkPoint(
   workPointId: string,
+  companyId: string,
 ): Promise<WorkerStats[]> {
-  const workPoint = await prisma.workPoint.findUnique({
-    where: { id: workPointId },
+  const workPoint = await prisma.workPoint.findFirst({
+    where: { id: workPointId, companyId },
     select: {
       workers: {
         select: {
@@ -76,13 +77,25 @@ export async function listWorkersForWorkPoint(
 export async function assignWorkerToWorkPoint(
   workPointId: string,
   workerId: string,
+  companyId: string,
   assignedByUserId?: string,
 ): Promise<void> {
+  const workPoint = await prisma.workPoint.findFirst({
+    where: { id: workPointId, companyId },
+    select: { id: true },
+  });
+  if (!workPoint) {
+    throw new Error("Work point not found");
+  }
+
   const worker = await prisma.user.findUnique({
     where: { id: workerId },
-    select: { role: true },
+    select: { companyId: true, role: true },
   });
   if (!worker) {
+    throw new Error("User not found");
+  }
+  if (worker.companyId !== companyId) {
     throw new Error("User not found");
   }
   if (worker.role !== "WORKER") {
@@ -104,7 +117,16 @@ export async function assignWorkerToWorkPoint(
 export async function removeWorkerFromWorkPoint(
   workPointId: string,
   workerId: string,
+  companyId: string,
 ): Promise<void> {
+  const workPoint = await prisma.workPoint.findFirst({
+    where: { id: workPointId, companyId },
+    select: { id: true },
+  });
+  if (!workPoint) {
+    throw new Error("Work point not found");
+  }
+
   await prisma.workPoint.update({
     where: { id: workPointId },
     data: {
@@ -123,8 +145,24 @@ export async function removeWorkerFromWorkPoint(
 
 export async function updateWorker(
   workerId: string,
+  companyId: string,
   data: { username?: string; email?: string; role?: string; hourlyWage?: number | null },
 ): Promise<WorkerSummary> {
+  if (data.role === "ADMIN") {
+    throw new Error("A company can have only one admin");
+  }
+
+  const existingWorker = await prisma.user.findFirst({
+    where: { id: workerId, companyId },
+    select: { id: true, role: true },
+  });
+  if (!existingWorker) {
+    throw new Error("User not found");
+  }
+  if (existingWorker.role === "ADMIN") {
+    throw new Error("Admin cannot be edited here");
+  }
+
   const worker = await prisma.user.update({
     where: { id: workerId },
     data,
@@ -147,6 +185,17 @@ export async function updateWorker(
   };
 }
 
-export async function deleteWorker(workerId: string): Promise<void> {
+export async function deleteWorker(workerId: string, companyId: string): Promise<void> {
+  const worker = await prisma.user.findFirst({
+    where: { id: workerId, companyId },
+    select: { id: true, role: true },
+  });
+  if (!worker) {
+    throw new Error("User not found");
+  }
+  if (worker.role === "ADMIN") {
+    throw new Error("Admin cannot be deleted here");
+  }
+
   await prisma.user.delete({ where: { id: workerId } });
 }

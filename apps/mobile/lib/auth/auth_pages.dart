@@ -100,9 +100,11 @@ class _LoginPageState extends State<LoginPage> {
                 _isSubmitting ? l10n.t('Signing in...') : l10n.t('Sign in'),
               ),
             ),
-            TextButton(
-              onPressed: _isSubmitting ? null : () => context.go('/register'),
-              child: Text(l10n.t('No account? Register')),
+            const SizedBox(height: 8),
+            Text(
+              l10n.t('Ask your company administrator for an invitation.'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
@@ -170,6 +172,32 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final invited = widget.token?.isNotEmpty == true;
+
+    if (!invited) {
+      return _AuthScaffold(
+        title: l10n.t('Registration is invite-only'),
+        subtitle: l10n.t('Paid registration is not available yet.'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.t(
+                'Use an invitation link from your company administrator to create an account.',
+              ),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => context.go('/login'),
+              icon: const Icon(Icons.login),
+              label: Text(l10n.t('Sign in')),
+            ),
+          ],
+        ),
+      );
+    }
+
     return _AuthScaffold(
       title: l10n.t('Create your account'),
       subtitle: l10n.t('Join the Construction ERP system'),

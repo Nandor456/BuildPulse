@@ -18,7 +18,7 @@ export async function listChatsController(
 ) {
   try {
     const userId = req.auth!.userId;
-    const chats = await listChatsForUser(userId);
+    const chats = await listChatsForUser(userId, req.auth!.companyId);
     res.json(chats);
   } catch (err) {
     next(err);
@@ -50,7 +50,11 @@ export async function createDirectChatController(
   try {
     const userId = req.auth!.userId;
     const { userId: otherUserId } = req.body as { userId: string };
-    const result = await findOrCreateDirectChat(userId, otherUserId);
+    const result = await findOrCreateDirectChat(
+      userId,
+      otherUserId,
+      req.auth!.companyId,
+    );
     if (result.isNew) {
       void emitChatChanged(result.id).catch((err) => {
         console.error("emitChatChanged error:", err);
@@ -140,7 +144,7 @@ export async function listUsersController(
 ) {
   try {
     const userId = req.auth!.userId;
-    const users = await listAllUsers(userId);
+    const users = await listAllUsers(userId, req.auth!.companyId);
     res.json(users);
   } catch (err) {
     next(err);

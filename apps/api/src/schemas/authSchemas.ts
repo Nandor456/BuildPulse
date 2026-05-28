@@ -18,6 +18,12 @@ export const registerSchema = z.object({
       .regex(/^[A-Z]/, "Password must start with an uppercase letter.")
       .min(6, "Password must be at least 6 characters.")
       .max(100, "Password must be at most 100 characters."),
+    companyName: z
+      .string()
+      .trim()
+      .min(1, "Company name is required.")
+      .max(120, "Company name must be at most 120 characters.")
+      .optional(),
     token: z
       .string()
       .trim()

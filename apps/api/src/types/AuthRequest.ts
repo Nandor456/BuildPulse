@@ -4,6 +4,9 @@ import type { ParsedQs } from "qs";
 
 export type RequestAuth = {
   userId: string;
+  role: string;
+  companyId: string;
+  companyBillingStatus: string;
   tokenId?: string;
 };
 

@@ -23,19 +23,19 @@ function notifyWorkPointChatChanged(workPointId: string, extraUserIds: string[] 
   })();
 }
 
-async function ensureWorkPointExists(workPointId: string) {
-  return prisma.workPoint.findUnique({
-    where: { id: workPointId },
+async function ensureWorkPointExists(workPointId: string, companyId: string) {
+  return prisma.workPoint.findFirst({
+    where: { id: workPointId, companyId },
     select: { id: true },
   });
 }
 
 export async function listWorkersController(
-  _req: AuthenticatedRequest,
+  req: AuthenticatedRequest,
   res: Response,
 ) {
   try {
-    const workers = await listWorkers();
+    const workers = await listWorkers(req.auth!.companyId);
     res.json({ workers });
   } catch (error) {
     const message =
@@ -51,12 +51,12 @@ export async function listWorkPointWorkersController(
   const { id } = req.params;
 
   try {
-    const workPoint = await ensureWorkPointExists(id);
+    const workPoint = await ensureWorkPointExists(id, req.auth!.companyId);
     if (!workPoint) {
       return res.status(404).json({ error: "Work point not found" });
     }
 
-    const workers = await listWorkersForWorkPoint(id);
+    const workers = await listWorkersForWorkPoint(id, req.auth!.companyId);
     res.json({ workers });
   } catch (error) {
     const message =
@@ -79,14 +79,19 @@ export async function assignWorkerController(
   }
 
   try {
-    const workPoint = await ensureWorkPointExists(id);
+    const workPoint = await ensureWorkPointExists(id, req.auth!.companyId);
     if (!workPoint) {
       return res.status(404).json({ error: "Work point not found" });
     }
 
-    await assignWorkerToWorkPoint(id, workerId, req.auth!.userId);
+    await assignWorkerToWorkPoint(
+      id,
+      workerId,
+      req.auth!.companyId,
+      req.auth!.userId,
+    );
     notifyWorkPointChatChanged(id);
-    const workers = await listWorkersForWorkPoint(id);
+    const workers = await listWorkersForWorkPoint(id, req.auth!.companyId);
     res.status(200).json({ workers });
   } catch (error) {
     const message =
@@ -102,14 +107,14 @@ export async function removeWorkerController(
   const { id, workerId } = req.params;
 
   try {
-    const workPoint = await ensureWorkPointExists(id);
+    const workPoint = await ensureWorkPointExists(id, req.auth!.companyId);
     if (!workPoint) {
       return res.status(404).json({ error: "Work point not found" });
     }
 
-    await removeWorkerFromWorkPoint(id, workerId);
+    await removeWorkerFromWorkPoint(id, workerId, req.auth!.companyId);
     notifyWorkPointChatChanged(id, [workerId]);
-    const workers = await listWorkersForWorkPoint(id);
+    const workers = await listWorkersForWorkPoint(id, req.auth!.companyId);
     res.status(200).json({ workers });
   } catch (error) {
     const message =
@@ -131,7 +136,12 @@ export async function updateWorkerController(
   };
 
   try {
-    const worker = await updateWorker(workerId, { username, email, role, hourlyWage });
+    const worker = await updateWorker(workerId, req.auth!.companyId, {
+      username,
+      email,
+      role,
+      hourlyWage,
+    });
     res.json({ worker });
   } catch (error) {
     const message =
@@ -147,7 +157,7 @@ export async function deleteWorkerController(
   const { workerId } = req.params;
 
   try {
-    await deleteWorker(workerId);
+    await deleteWorker(workerId, req.auth!.companyId);
     res.status(204).send();
   } catch (error) {
     const message =

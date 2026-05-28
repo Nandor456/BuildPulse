@@ -50,6 +50,7 @@ class BuildPulseApi {
     required String username,
     required String email,
     required String password,
+    String? companyName,
     String? token,
   }) async {
     await client.post<dynamic>(
@@ -58,6 +59,7 @@ class BuildPulseApi {
         'username': username,
         'email': email,
         'password': password,
+        if (token == null || token.isEmpty) 'companyName': companyName,
         if (token != null && token.isNotEmpty) 'token': token,
       },
     );

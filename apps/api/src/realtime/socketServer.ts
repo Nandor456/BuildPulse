@@ -13,6 +13,7 @@ import {
 } from "../services/authTokenService.js";
 import { createCorsOriginValidator } from "../config/env.js";
 import type { LeaveRequestDTO } from "../services/leaveRequestService.js";
+import { prisma } from "../../database/prisma.js";
 
 interface ServerToClientEvents {
   "message:new": (message: Record<string, unknown>) => void;
@@ -86,7 +87,15 @@ export function initSocketServer(httpServer: HttpServer) {
 
     try {
       const verified = await verifyAccessToken(token);
+      const user = await prisma.user.findUnique({
+        where: { id: verified.userId },
+        select: { companyId: true },
+      });
+      if (!user) {
+        return next(new Error("Unauthorized"));
+      }
       socket.data.userId = verified.userId;
+      socket.data.companyId = user.companyId;
       next();
     } catch {
       next(new Error("Unauthorized"));
@@ -95,7 +104,8 @@ export function initSocketServer(httpServer: HttpServer) {
 
   io.on("connection", async (socket) => {
     const userId = socket.data.userId as string | undefined;
-    if (!userId) return socket.disconnect();
+    const companyId = socket.data.companyId as string | undefined;
+    if (!userId || !companyId) return socket.disconnect();
 
     // Track presence
     if (!onlineUsers.has(userId)) onlineUsers.set(userId, new Set());
@@ -103,13 +113,14 @@ export function initSocketServer(httpServer: HttpServer) {
 
     // Join personal room and all chat rooms
     socket.join(`user:${userId}`);
+    socket.join(`company:${companyId}`);
     const chatIds = await getUserChatIds(userId);
     for (const chatId of chatIds) {
       socket.join(`chat:${chatId}`);
     }
 
     // Notify others that this user is online
-    io.emit("presence:online", { userId });
+    io.to(`company:${companyId}`).emit("presence:online", { userId });
 
     // ── message:send ───────────────────────────────────────────────
     socket.on("message:send", async (data) => {
@@ -150,7 +161,13 @@ export function initSocketServer(httpServer: HttpServer) {
     });
 
     // ── message:typing ─────────────────────────────────────────────
-    socket.on("message:typing", (data) => {
+    socket.on("message:typing", async (data) => {
+      const participant = await prisma.chatParticipant.findUnique({
+        where: { chatId_userId: { chatId: data.chatId, userId } },
+        select: { id: true },
+      });
+      if (!participant) return;
+
       socket.to(`chat:${data.chatId}`).emit("typing", {
         chatId: data.chatId,
         userId,
@@ -174,7 +191,13 @@ export function initSocketServer(httpServer: HttpServer) {
     });
 
     // ── chat:join ──────────────────────────────────────────────────
-    socket.on("chat:join", (data) => {
+    socket.on("chat:join", async (data) => {
+      const participant = await prisma.chatParticipant.findUnique({
+        where: { chatId_userId: { chatId: data.chatId, userId } },
+        select: { id: true },
+      });
+      if (!participant) return;
+
       socket.join(`chat:${data.chatId}`);
     });
 
@@ -185,7 +208,7 @@ export function initSocketServer(httpServer: HttpServer) {
         sockets.delete(socket.id);
         if (sockets.size === 0) {
           onlineUsers.delete(userId);
-          io.emit("presence:offline", { userId });
+          io.to(`company:${companyId}`).emit("presence:offline", { userId });
         }
       }
     });

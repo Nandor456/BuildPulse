@@ -42,12 +42,21 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Checked out": "Ieșire înregistrată",
     "Complete": "Complete",
     "Completed attendances only": "Doar prezențele finalizate",
+    "Company name": "Numele companiei",
+    "Company name is required.": "Numele companiei este obligatoriu.",
+    "Construction operations for teams in motion":
+      "Operațiuni de construcții pentru echipe în mișcare",
+    "Coordinate workpoints, QR attendance, worker documents, leave requests, and team messaging in one focused construction operations system.":
+      "Coordonează punctele de lucru, prezența QR, documentele muncitorilor, cererile de concediu și mesajele echipei într-un sistem concentrat pentru operațiuni de construcții.",
     "Configured on your worker profile": "Configurat în profilul tău de muncitor",
     "Coordinates are generated automatically from the address.":
       "Coordonatele sunt generate automat din adresă.",
     "Copied!": "Copiat!",
     "Copy invite link": "Copiază linkul invitației",
     "Create account": "Creează cont",
+    "Create first administrator": "Creează primul administrator",
+    "Create the first company administrator":
+      "Creează primul administrator al companiei",
     "Create workpoint": "Creează punct de lucru",
     "Create your account": "Creează-ți contul",
     "Creating account…": "Se creează contul…",
@@ -106,11 +115,14 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Invite a new user": "Invită un utilizator nou",
     "Invite new users by email. Each invitation carries a role and a one-time registration link.":
       "Invită utilizatori noi prin email. Fiecare invitație include un rol și un link unic de înregistrare.",
+    "Invite leaders and workers, keep roles clear, and organize communication around real work.":
+      "Invită șefi de echipă și muncitori, păstrează rolurile clare și organizează comunicarea în jurul muncii reale.",
     "Join the Construction ERP system":
       "Alătură-te sistemului ERP pentru construcții",
     "LEADER": "Șef de echipă",
     "Leader": "Șef de echipă",
     "Light theme": "Tema deschisă",
+    "Leave and documents": "Concedii și documente",
     "Location timed out. Move somewhere with a clearer signal and try again.":
       "Locația a expirat. Mergi într-un loc cu semnal mai bun și încearcă din nou.",
     "Location access requires HTTPS.":
@@ -122,7 +134,12 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Location required": "Locație necesară",
     "Are you sure you want to log out?":
       "Ești sigur că vrei să te deconectezi?",
+    "Ask your company administrator for an invitation.":
+      "Cere administratorului companiei o invitație.",
+    "Handle leave requests, worker files, and workpoint documents without spreadsheet drift.":
+      "Gestionează cererile de concediu, fișierele muncitorilor și documentele punctelor de lucru fără tabele care scapă de sub control.",
     "Log out": "Deconectare",
+    "Login": "Autentificare",
     "Login failed": "Autentificarea a eșuat",
     "Messages": "Mesaje",
     "Missing check-out": "Ieșire lipsă",
@@ -135,6 +152,11 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
       "Numele și adresa sunt obligatorii.",
     "Network error. Please try again.":
       "Eroare de rețea. Încearcă din nou.",
+    "Need access?": "Ai nevoie de acces?",
+    "New company registration will open after payment is available. For now, use an invitation link or request access.":
+      "Înregistrarea companiilor noi se va deschide după ce plata este disponibilă. Deocamdată, folosește un link de invitație sau solicită acces.",
+    "For first-time setup on an empty database, use the bootstrap registration flow.":
+      "Pentru configurarea inițială pe o bază de date goală, folosește fluxul de înregistrare bootstrap.",
     "New workpoint": "Punct de lucru nou",
     "No account?": "Nu ai cont?",
     "No attendance recorded here for {periodLabel}.":
@@ -169,6 +191,9 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Password is required.": "Parola este obligatorie.",
     "PDF": "PDF",
     "Pending": "În așteptare",
+    "Pending leave": "Concedii în așteptare",
+    "Plan and manage job sites, assigned workers, documents, and daily attendance from one place.":
+      "Planifică și gestionează șantierele, muncitorii alocați, documentele și prezența zilnică dintr-un singur loc.",
     "Place the attendance QR code inside the frame.":
       "Așază codul QR de prezență în interiorul cadrului.",
     "Please enter a username and password.":
@@ -184,10 +209,15 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
       "Previzualizează și descarcă documentele distribuite profilului tău de muncitor.",
     "Preview is not available for this document.":
       "Previzualizarea nu este disponibilă pentru acest document.",
+    "QR attendance": "Prezență QR",
     "Record attendance": "Înregistrează prezența",
     "Recording attendance...": "Se înregistrează prezența...",
     "Register": "Înregistrare",
+    "Registration is invite-only": "Înregistrarea este doar pe bază de invitație",
+    "Registration is invite-only until payment is available.":
+      "Înregistrarea este doar pe bază de invitație până când plata este disponibilă.",
     "Registration failed": "Înregistrarea a eșuat",
+    "Request access": "Solicită acces",
     "Username already taken": "Numele de utilizator este deja folosit.",
     "Username must be at most 50 characters.":
       "Numele de utilizator poate avea cel mult 50 de caractere.",
@@ -225,6 +255,7 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
       "Această prezență a fost închisă automat la 22:00 și poate necesita verificare.",
     "This browser cannot provide location for attendance scans.":
       "Acest browser nu poate furniza locația pentru scanarea prezenței.",
+    "Team operations": "Operațiuni de echipă",
     "Total hours": "Total ore",
     "Track your assigned workpoints, attendance, hours, and wage-based earnings for {periodLabel}.":
       "Urmărește punctele de lucru alocate, prezența, orele și câștigurile bazate pe salariu pentru {periodLabel}.",
@@ -252,6 +283,10 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Worker dashboard": "Tablou de bord muncitor",
     "Worker management": "Gestionare muncitori",
     "Workers": "Muncitori",
+    "Workers scan on site while managers review hours, missing check-outs, and Excel exports.":
+      "Muncitorii scanează pe șantier, iar managerii verifică orele, ieșirile lipsă și exporturile Excel.",
+    "Workpoint control": "Controlul punctelor de lucru",
+    "Your company": "Compania ta",
     "Your BuildPulse home": "Panoul tău BuildPulse",
     "Your documents": "Documentele tale",
     "Your own check-ins and check-outs for {periodLabel}.":
@@ -269,6 +304,12 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
       "Închisă automat la 22:00. Editează pentru a marca verificarea.",
     "BuildPulse": "BuildPulse",
     "BuildPulse logo": "Sigla BuildPulse",
+    "BuildPulse keeps field work, office review, and worker self-service connected without adding another messy spreadsheet.":
+      "BuildPulse conectează munca de pe șantier, verificarea din birou și autoservirea muncitorilor fără încă un tabel dezordonat.",
+    "Bootstrap registration only works when it is enabled on the API and no company exists yet.":
+      "Înregistrarea bootstrap funcționează doar când este activată în API și nu există încă nicio companie.",
+    "Built for the daily rhythm of construction work":
+      "Creat pentru ritmul zilnic al lucrărilor de construcții",
     "by {name}": "de {name}",
     "Check in": "Intrare",
     "Check out": "Ieșire",
@@ -476,12 +517,21 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Checked out": "Kilépés rögzítve",
     "Complete": "Lezárt",
     "Completed attendances only": "Csak a lezárt jelenlétek",
+    "Company name": "Cég neve",
+    "Company name is required.": "A cég neve kötelező.",
+    "Construction operations for teams in motion":
+      "Építőipari műveletek mozgásban lévő csapatoknak",
+    "Coordinate workpoints, QR attendance, worker documents, leave requests, and team messaging in one focused construction operations system.":
+      "Koordináld a munkapontokat, QR-jelenlétet, dolgozói dokumentumokat, szabadságkérelmeket és csapatüzeneteket egy célzott építőipari műveleti rendszerben.",
     "Configured on your worker profile": "A dolgozói profilodon beállítva",
     "Coordinates are generated automatically from the address.":
       "A koordináták automatikusan készülnek a címből.",
     "Copied!": "Másolva!",
     "Copy invite link": "Meghívó link másolása",
     "Create account": "Fiók létrehozása",
+    "Create first administrator": "Első adminisztrátor létrehozása",
+    "Create the first company administrator":
+      "Az első céges adminisztrátor létrehozása",
     "Create workpoint": "Munkapont létrehozása",
     "Create your account": "Hozd létre a fiókodat",
     "Creating account…": "Fiók létrehozása folyamatban…",
@@ -542,11 +592,14 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Invite a new user": "Új felhasználó meghívása",
     "Invite new users by email. Each invitation carries a role and a one-time registration link.":
       "Hívj meg új felhasználókat emailben. Minden meghívóhoz szerepkör és egyszer használható regisztrációs link tartozik.",
+    "Invite leaders and workers, keep roles clear, and organize communication around real work.":
+      "Hívj meg vezetőket és dolgozókat, tartsd tisztán a szerepeket, és szervezd a kommunikációt a valós munka köré.",
     "Join the Construction ERP system":
       "Csatlakozz az építőipari ERP rendszerhez",
     "LEADER": "Csapatvezető",
     "Leader": "Csapatvezető",
     "Light theme": "Világos téma",
+    "Leave and documents": "Szabadságok és dokumentumok",
     "Location timed out. Move somewhere with a clearer signal and try again.":
       "A helymeghatározás időtúllépéssel leállt. Menj jobb jelű helyre, és próbáld újra.",
     "Location access requires HTTPS.":
@@ -558,7 +611,12 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Location required": "Helyadat szükséges",
     "Are you sure you want to log out?":
       "Biztosan ki szeretnél jelentkezni?",
+    "Ask your company administrator for an invitation.":
+      "Kérj meghívót a céges adminisztrátortól.",
+    "Handle leave requests, worker files, and workpoint documents without spreadsheet drift.":
+      "Kezeld a szabadságkérelmeket, dolgozói fájlokat és munkapont-dokumentumokat táblázatos szétesés nélkül.",
     "Log out": "Kijelentkezés",
+    "Login": "Bejelentkezés",
     "Login failed": "A belépés sikertelen",
     "Messages": "Üzenetek",
     "Missing check-out": "Hiányzó kilépés",
@@ -570,6 +628,11 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Name and address are required.": "A név és a cím kötelező.",
     "Network error. Please try again.":
       "Hálózati hiba. Próbáld újra.",
+    "Need access?": "Hozzáférésre van szükséged?",
+    "New company registration will open after payment is available. For now, use an invitation link or request access.":
+      "Az új cégek regisztrációja a fizetés elérhetősége után nyílik meg. Addig használj meghívó linket, vagy kérj hozzáférést.",
+    "For first-time setup on an empty database, use the bootstrap registration flow.":
+      "Első beállításkor üres adatbázisnál használd a bootstrap regisztrációs folyamatot.",
     "New workpoint": "Új munkapont",
     "No account?": "Nincs fiókod?",
     "No attendance recorded here for {periodLabel}.":
@@ -604,6 +667,9 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Password is required.": "A jelszó kötelező.",
     "PDF": "PDF",
     "Pending": "Függőben",
+    "Pending leave": "Függő szabadság",
+    "Plan and manage job sites, assigned workers, documents, and daily attendance from one place.":
+      "Tervezd és kezeld a munkaterületeket, hozzárendelt dolgozókat, dokumentumokat és napi jelenlétet egy helyről.",
     "Place the attendance QR code inside the frame.":
       "Helyezd a jelenléti QR-kódot a keretbe.",
     "Please enter a username and password.":
@@ -619,10 +685,15 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
       "Tekintsd meg és töltsd le a dolgozói profilodhoz megosztott dokumentumokat.",
     "Preview is not available for this document.":
       "Ehhez a dokumentumhoz nem érhető el előnézet.",
+    "QR attendance": "QR-jelenlét",
     "Record attendance": "Jelenlét rögzítése",
     "Recording attendance...": "Jelenlét rögzítése folyamatban...",
     "Register": "Regisztráció",
+    "Registration is invite-only": "A regisztráció csak meghívóval érhető el",
+    "Registration is invite-only until payment is available.":
+      "A regisztráció a fizetés elérhetőségéig csak meghívóval működik.",
     "Registration failed": "A regisztráció sikertelen",
+    "Request access": "Hozzáférés kérése",
     "Username already taken": "Ez a felhasználónév már foglalt.",
     "Username must be at most 50 characters.":
       "A felhasználónév legfeljebb 50 karakter lehet.",
@@ -660,6 +731,7 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
       "Ez a jelenlét automatikusan lezárult 22:00-kor, és ellenőrzésre szorulhat.",
     "This browser cannot provide location for attendance scans.":
       "Ez a böngésző nem tud helyadatot adni a jelenlét szkenneléshez.",
+    "Team operations": "Csapatműveletek",
     "Total hours": "Összes óra",
     "Track your assigned workpoints, attendance, hours, and wage-based earnings for {periodLabel}.":
       "Kövesd a hozzád rendelt munkapontokat, a jelenlétet, az órákat és a béralapú kereseteket ehhez: {periodLabel}.",
@@ -687,6 +759,10 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
     "Worker dashboard": "Dolgozói áttekintés",
     "Worker management": "Dolgozók kezelése",
     "Workers": "Dolgozók",
+    "Workers scan on site while managers review hours, missing check-outs, and Excel exports.":
+      "A dolgozók a helyszínen szkennelnek, miközben a vezetők ellenőrzik az órákat, hiányzó kilépéseket és Excel-exportokat.",
+    "Workpoint control": "Munkapont-irányítás",
+    "Your company": "A céged",
     "Your BuildPulse home": "A BuildPulse kezdőlapod",
     "Your documents": "Saját dokumentumok",
     "Your own check-ins and check-outs for {periodLabel}.":
@@ -704,6 +780,12 @@ const messages: Record<Exclude<AppLanguage, "en">, Record<string, string>> = {
       "Automatikusan lezárva 22:00-kor. Szerkeszd az ellenőrzöttként jelöléshez.",
     "BuildPulse": "BuildPulse",
     "BuildPulse logo": "BuildPulse logo",
+    "BuildPulse keeps field work, office review, and worker self-service connected without adding another messy spreadsheet.":
+      "A BuildPulse összeköti a terepi munkát, az irodai ellenőrzést és a dolgozói önkiszolgálást egy újabb rendezetlen táblázat nélkül.",
+    "Bootstrap registration only works when it is enabled on the API and no company exists yet.":
+      "A bootstrap regisztráció csak akkor működik, ha engedélyezve van az API-ban, és még nem létezik cég.",
+    "Built for the daily rhythm of construction work":
+      "Az építőipari munka napi ritmusára építve",
     "by {name}": "{name} által",
     "Check in": "Belépés",
     "Check out": "Kilépés",

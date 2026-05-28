@@ -10,6 +10,7 @@ export type InvitationDTO = {
   id: string;
   email: string;
   role: string;
+  companyId: string;
   status: InvitationStatus;
   expiresAt: string;
   acceptedAt: string | null;
@@ -43,6 +44,7 @@ function toDTO(invitation: {
   id: string;
   email: string;
   role: string;
+  companyId: string;
   token: string;
   acceptedAt: Date | null;
   revokedAt: Date | null;
@@ -53,6 +55,7 @@ function toDTO(invitation: {
     id: invitation.id,
     email: invitation.email,
     role: invitation.role,
+    companyId: invitation.companyId,
     status: computeStatus(invitation),
     expiresAt: invitation.expiresAt.toISOString(),
     acceptedAt: invitation.acceptedAt ? invitation.acceptedAt.toISOString() : null,
@@ -62,8 +65,9 @@ function toDTO(invitation: {
   };
 }
 
-export async function listInvitations(): Promise<InvitationDTO[]> {
+export async function listInvitations(companyId: string): Promise<InvitationDTO[]> {
   const rows = await prisma.invitation.findMany({
+    where: { companyId },
     orderBy: { createdAt: "desc" },
   });
   return rows.map(toDTO);
@@ -73,8 +77,12 @@ export async function createInvitation(params: {
   email: string;
   role: string;
   invitedById: string;
+  companyId: string;
 }): Promise<InvitationDTO> {
   const email = params.email.trim().toLowerCase();
+  if (params.role === "ADMIN") {
+    throw new Error("A company can have only one admin");
+  }
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
@@ -98,6 +106,7 @@ export async function createInvitation(params: {
     data: {
       id: randomUUID(),
       email,
+      companyId: params.companyId,
       role: params.role,
       token,
       invitedById: params.invitedById,
@@ -111,8 +120,13 @@ export async function createInvitation(params: {
   return toDTO(invitation);
 }
 
-export async function revokeInvitation(id: string): Promise<InvitationDTO> {
-  const invitation = await prisma.invitation.findUnique({ where: { id } });
+export async function revokeInvitation(
+  id: string,
+  companyId: string,
+): Promise<InvitationDTO> {
+  const invitation = await prisma.invitation.findFirst({
+    where: { id, companyId },
+  });
   if (!invitation) throw new Error("Invitation not found");
   if (invitation.acceptedAt) throw new Error("Invitation already accepted");
   if (invitation.revokedAt) return toDTO(invitation);
@@ -127,7 +141,7 @@ export async function revokeInvitation(id: string): Promise<InvitationDTO> {
 export async function consumeInvitationToken(params: {
   token: string;
   email: string;
-}): Promise<{ role: string } | null> {
+}): Promise<{ role: string; companyId: string } | null> {
   const invitation = await prisma.invitation.findUnique({
     where: { token: params.token },
   });
@@ -143,5 +157,5 @@ export async function consumeInvitationToken(params: {
     data: { acceptedAt: new Date() },
   });
 
-  return { role: invitation.role };
+  return { role: invitation.role, companyId: invitation.companyId };
 }

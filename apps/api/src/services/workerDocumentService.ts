@@ -106,21 +106,22 @@ async function removeStoredFile(storedName: string) {
   }
 }
 
-async function ensureWorkerTarget(workerId: string) {
+async function ensureWorkerTarget(workerId: string, companyId: string) {
   const worker = await prisma.user.findUnique({
     where: { id: workerId },
-    select: { id: true, role: true },
+    select: { id: true, companyId: true, role: true },
   });
 
-  if (!worker || worker.role !== "WORKER") {
+  if (!worker || worker.companyId !== companyId || worker.role !== "WORKER") {
     throw new WorkerDocumentError("Worker not found", 404);
   }
 }
 
 export async function listWorkerDocuments(
   workerId: string,
+  companyId: string,
 ): Promise<WorkerDocumentSummary[]> {
-  await ensureWorkerTarget(workerId);
+  await ensureWorkerTarget(workerId, companyId);
 
   const documents = await prisma.workerDocument.findMany({
     where: { workerId },
@@ -146,10 +147,11 @@ export async function listMyWorkerDocuments(
 export async function createWorkerDocument(params: {
   workerId: string;
   uploadedById: string;
+  companyId: string;
   file: Express.Multer.File;
 }): Promise<WorkerDocumentSummary> {
   try {
-    await ensureWorkerTarget(params.workerId);
+    await ensureWorkerTarget(params.workerId, params.companyId);
 
     const document = await prisma.workerDocument.create({
       data: {
@@ -170,13 +172,16 @@ export async function createWorkerDocument(params: {
   }
 }
 
-export async function deleteWorkerDocument(documentId: string): Promise<void> {
+export async function deleteWorkerDocument(
+  documentId: string,
+  companyId: string,
+): Promise<void> {
   const document = await prisma.workerDocument.findUnique({
     where: { id: documentId },
-    select: { id: true, storedName: true },
+    select: { id: true, storedName: true, worker: { select: { companyId: true } } },
   });
 
-  if (!document) {
+  if (!document || document.worker.companyId !== companyId) {
     throw new WorkerDocumentError("Document not found", 404);
   }
 
@@ -191,19 +196,19 @@ export async function getWorkerDocumentFile(params: {
   const [document, user] = await Promise.all([
     prisma.workerDocument.findUnique({
       where: { id: params.documentId },
-      select: documentSelect,
+      select: {
+        ...documentSelect,
+        worker: { select: { companyId: true } },
+      },
     }),
     prisma.user.findUnique({
       where: { id: params.userId },
-      select: { id: true, role: true },
+      select: { id: true, companyId: true, role: true },
     }),
   ]);
 
-  if (!document) {
+  if (!document || !user || document.worker.companyId !== user.companyId) {
     throw new WorkerDocumentError("Document not found", 404);
-  }
-  if (!user) {
-    throw new WorkerDocumentError("Unauthorized", 401);
   }
 
   const canAccess =

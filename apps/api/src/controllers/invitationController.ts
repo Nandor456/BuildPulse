@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import type { AuthenticatedRequest } from "../types/AuthRequest.js";
 import {
   createInvitation,
@@ -6,8 +6,11 @@ import {
   revokeInvitation,
 } from "../services/invitationService.js";
 
-export async function listInvitationsController(_req: Request, res: Response) {
-  const invitations = await listInvitations();
+export async function listInvitationsController(
+  req: AuthenticatedRequest,
+  res: Response,
+) {
+  const invitations = await listInvitations(req.auth!.companyId);
   res.json({ invitations });
 }
 
@@ -22,6 +25,7 @@ export async function createInvitationController(
       email,
       role,
       invitedById: userId,
+      companyId: req.auth!.companyId,
     });
     res.status(201).json({ invitation });
   } catch (err) {
@@ -32,12 +36,12 @@ export async function createInvitationController(
 }
 
 export async function revokeInvitationController(
-  req: Request<{ id: string }>,
+  req: AuthenticatedRequest<{ id: string }>,
   res: Response,
 ) {
   const { id } = req.params;
   try {
-    const invitation = await revokeInvitation(id);
+    const invitation = await revokeInvitation(id, req.auth!.companyId);
     res.json({ invitation });
   } catch (err) {
     const message =

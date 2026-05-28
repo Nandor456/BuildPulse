@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import { prisma } from "../../database/prisma.js";
 import {
   createUser,
@@ -15,34 +16,102 @@ type User = {
   role: string;
 };
 
+export class RegistrationError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode = 400,
+  ) {
+    super(message);
+  }
+}
+
+export function isBootstrapRegistrationEnabled(
+  value = process.env.ALLOW_BOOTSTRAP_REGISTRATION,
+) {
+  return value?.trim().toLowerCase() === "true";
+}
+
+export function canCreateBootstrapCompany(params: {
+  allowBootstrapRegistration: boolean;
+  companyCount: number;
+}) {
+  return params.allowBootstrapRegistration && params.companyCount === 0;
+}
+
 export async function register(
   username: string,
   email: string,
   password: string,
+  companyName?: string,
   token?: string,
 ): Promise<User> {
   const existing = await findByUsername(username);
   if (existing) throw new Error("Username already taken");
 
-  const userCount = await prisma.user.count();
   let role: string;
+  let companyId: string;
 
-  if (userCount === 0) {
-    // First registered user bootstraps the system as ADMIN.
-    role = "ADMIN";
-  } else {
-    if (!token) {
-      throw new Error("An invitation token is required to register");
-    }
+  if (token) {
     const consumed = await consumeInvitationToken({ token, email });
     if (!consumed) {
       throw new Error("Invitation is invalid, expired, or does not match this email");
     }
     role = consumed.role;
+    companyId = consumed.companyId;
+  } else {
+    if (!isBootstrapRegistrationEnabled()) {
+      throw new RegistrationError(
+        "Registration is invite-only until payment is available.",
+        403,
+      );
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const companyCount = await tx.company.count();
+      if (
+        !canCreateBootstrapCompany({
+          allowBootstrapRegistration: true,
+          companyCount,
+        })
+      ) {
+        throw new RegistrationError(
+          "Registration is invite-only until payment is available.",
+          403,
+        );
+      }
+
+      const trimmedCompanyName = companyName?.trim();
+      if (!trimmedCompanyName) {
+        throw new Error("Company name is required");
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      const company = await tx.company.create({
+        data: { name: trimmedCompanyName },
+        select: { id: true },
+      });
+
+      return tx.user.create({
+        data: {
+          id: randomUUID(),
+          username,
+          email,
+          password: passwordHash,
+          role: "ADMIN",
+          companyId: company.id,
+        },
+      });
+    });
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user: CreateUserInput = { username, email, passwordHash, role };
+  const user: CreateUserInput = {
+    username,
+    email,
+    passwordHash,
+    role,
+    companyId,
+  };
   return createUser(user);
 }
 

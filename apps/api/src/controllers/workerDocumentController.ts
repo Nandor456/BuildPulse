@@ -36,7 +36,7 @@ export async function listWorkerDocumentsController(
   const { workerId } = req.params;
 
   try {
-    const documents = await listWorkerDocuments(workerId);
+    const documents = await listWorkerDocuments(workerId, req.auth!.companyId);
     res.json({ documents });
   } catch (error) {
     res
@@ -60,6 +60,7 @@ export async function uploadWorkerDocumentController(
     const document = await createWorkerDocument({
       workerId,
       uploadedById: req.auth!.userId,
+      companyId: req.auth!.companyId,
       file,
     });
     res.status(201).json({ document });
@@ -77,7 +78,7 @@ export async function deleteWorkerDocumentController(
   const { documentId } = req.params;
 
   try {
-    await deleteWorkerDocument(documentId);
+    await deleteWorkerDocument(documentId, req.auth!.companyId);
     res.status(204).send();
   } catch (error) {
     res

@@ -76,15 +76,11 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <div className="flex items-center gap-3">
-                            {/* Logo with glow ring */}
-                            <div className="relative flex-shrink-0">
-                                <div className="absolute inset-0 rounded-xl bg-orange-500/20 blur-md" />
-                                <img
-                                    src={buildPulseLogo}
-                                    alt={t("BuildPulse")}
-                                    className="relative h-8 w-8 rounded-xl ring-1 ring-white/10"
-                                />
-                            </div>
+                            <img
+                                src={buildPulseLogo}
+                                alt={t("BuildPulse")}
+                                className="relative h-8 w-8 rounded-xl ring-1 ring-white/10"
+                            />
 
                             {/* Name + tagline */}
                             <div className="flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">

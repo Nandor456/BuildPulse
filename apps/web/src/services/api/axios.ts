@@ -52,10 +52,11 @@ function redirectToLogin() {
 
   window.dispatchEvent(new Event(UNAUTHORIZED_EVENT_NAME));
 
-  const isAuthPage =
+  const isPublicPage =
+    window.location.pathname === "/" ||
     window.location.pathname === "/login" ||
     window.location.pathname === "/register";
-  if (!isAuthPage) {
+  if (!isPublicPage) {
     window.location.replace("/login");
   }
 }

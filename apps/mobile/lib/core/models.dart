@@ -59,18 +59,42 @@ enum UserRole {
   }
 }
 
+class CompanySummary {
+  const CompanySummary({
+    required this.id,
+    required this.name,
+    required this.billingStatus,
+  });
+
+  final String id;
+  final String name;
+  final String billingStatus;
+
+  factory CompanySummary.fromJson(JsonMap json) {
+    return CompanySummary(
+      id: _string(json['id']),
+      name: _string(json['name']),
+      billingStatus: _string(json['billingStatus']),
+    );
+  }
+}
+
 class User {
   const User({
     required this.id,
     required this.username,
     required this.email,
     required this.role,
+    this.companyId = '',
+    this.company,
   });
 
   final String id;
   final String username;
   final String email;
   final UserRole role;
+  final String companyId;
+  final CompanySummary? company;
 
   factory User.fromJson(JsonMap json) {
     return User(
@@ -78,6 +102,10 @@ class User {
       username: _string(json['username']),
       email: _string(json['email']),
       role: UserRole.fromWire(_string(json['role'])),
+      companyId: _string(json['companyId']),
+      company: json['company'] == null
+          ? null
+          : CompanySummary.fromJson(_map(json['company'])),
     );
   }
 }

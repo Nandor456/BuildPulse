@@ -7,6 +7,7 @@ This is a concise, implementation-accurate guide for the backend so agents do no
 
 - Base path: `/api`
 - Auth: JWT cookie auth with short-lived access cookies and rotating refresh tokens
+- Tenancy: each user belongs to exactly one company; authenticated app data is scoped by `companyId`
 - Role-based access: invitations, workpoint, worker assignment, worker account edits, and workpoint attendance operator routes allow `ADMIN` and `LEADER`; attendance time edit routes are `ADMIN`-only
 - Real-time: Socket.IO with JWT auth and chat events
 - File uploads: `/uploads/messaging` is static for messaging attachments; worker documents are stored under `private/worker-documents` and streamed through authenticated `/api/worker-documents/:documentId/file`; workpoint documents are stored under `private/workpoint-documents` and streamed through authenticated `/api/workpoint-documents/:documentId/file`
@@ -17,6 +18,7 @@ This is a concise, implementation-accurate guide for the backend so agents do no
 - Required env: `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, plus either `DATABASE_URL` or the `DB_*` variables needed to build it
 - Production should set `FRONTEND_BASE_URL`, `APP_BASE_URL`, and `CORS_ALLOWED_ORIGINS`
 - Optional env: `PORT` (default 4000), `ATTENDANCE_TIMEZONE`, `AUTH_COOKIE_SAME_SITE`, `FIREBASE_SERVICE_ACCOUNT_JSON`, SMTP vars for mail
+- Optional bootstrap env: `ALLOW_BOOTSTRAP_REGISTRATION=true` permits the first company/admin signup only when no companies exist; keep it off otherwise
 - CORS uses `CORS_ALLOWED_ORIGINS`/`FRONTEND_BASE_URL` and still allows localhost origins outside production
 - If the frontend calls the API from a different site in production, set `AUTH_COOKIE_SAME_SITE=none` so auth cookies can be sent cross-site
 - Refresh tokens are stored hashed in Postgres
@@ -31,8 +33,9 @@ This is a concise, implementation-accurate guide for the backend so agents do no
 ## Auth routes
 
 `POST /api/auth/register`
-- Body: `{ username, email, password, token? }`
-- First user becomes `ADMIN`. Subsequent users must use a valid invitation token.
+- Body: `{ username, email, password, companyName?, token? }`
+- Without `token`, creates a new company and its sole `ADMIN` only when `ALLOW_BOOTSTRAP_REGISTRATION=true` and the database has zero companies; `companyName` is required.
+- With `token`, joins the invitation's company as `LEADER` or `WORKER`; `companyName` is ignored.
 - Response: `{ id }` and auth cookies set.
 
 `POST /api/auth/login`
@@ -52,7 +55,7 @@ This is a concise, implementation-accurate guide for the backend so agents do no
 - Returns `{ invitations: InvitationDTO[] }`
 
 `POST /api/invitations`
-- Body: `{ email, role }`
+- Body: `{ email, role }` where role is `WORKER` or `LEADER`; companies cannot invite another `ADMIN`
 - Sends invitation email with `inviteUrl` (`/register?token=...&email=...`).
 
 `DELETE /api/invitations/:id`
